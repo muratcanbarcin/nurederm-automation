@@ -29,6 +29,8 @@ BASE_DIR = Path(__file__).resolve().parent
 INPUT_PATH = BASE_DIR / "mesajlar.json"
 OUTPUT_PATH = BASE_DIR / "talepler.json"
 CSV_PATH = BASE_DIR / "talepler.csv"
+# Turkish-locale Excel uses ";" as the list separator; "," would collapse rows into one column.
+CSV_DELIMITER = ";"
 CSV_COLUMNS: tuple[str, ...] = (
     "id", "kanal", "musteri_id", "konu", "oncelik", "devret", "cevap_taslagi", "not",
 )
@@ -746,7 +748,7 @@ def export_csv(
         raise ValueError(f"Tickets without a source message: {missing}")
 
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.writer(handle, quoting=csv.QUOTE_MINIMAL)
+        writer = csv.writer(handle, delimiter=CSV_DELIMITER, quoting=csv.QUOTE_MINIMAL)
         writer.writerow(CSV_COLUMNS)
         for result in results:
             message = messages_by_id[result.id]

@@ -144,7 +144,12 @@ def validate_structure(workflow: dict[str, Any], report: Report) -> None:
 
     print("\nError handling")
     report.check(http.get("onError") == "continueErrorOutput", "HTTP node routes transport errors to an error output")
-    report.check(http.get("retryOnFail") is True and int(http.get("maxTries", 0)) >= 2, "HTTP node retries before failing")
+    report.check(
+        http.get("retryOnFail") is True
+        and int(http.get("maxTries", 0)) == 3
+        and int(http.get("waitBetweenTries", 0)) == 2000,
+        "HTTP node retries before failing (3 attempts, 2000 ms apart)",
+    )
     response_opts = http.get("parameters", {}).get("options", {}).get("response", {}).get("response", {})
     report.check(response_opts.get("neverError") is True and response_opts.get("fullResponse") is True,
                  "HTTP node exposes statusCode for 4xx/5xx evaluation")

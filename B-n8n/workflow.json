@@ -137,7 +137,7 @@
       ],
       "retryOnFail": true,
       "maxTries": 3,
-      "waitBetweenTries": 3000,
+      "waitBetweenTries": 2000,
       "onError": "continueErrorOutput"
     },
     {
@@ -724,7 +724,7 @@
     },
     {
       "parameters": {
-        "content": "### Controlled failure branch\nTransport errors (after 3 retries), non-2xx status codes, zero products on a page or unparsable price cards all land here: alert is sent, then *Abort Execution* fails the run so nothing is persisted.",
+        "content": "### Controlled failure branch\nTransport errors (after 3 attempts, 2 s apart), non-2xx status codes, zero products on a page or unparsable price cards all land here: alert is sent, then *Abort Execution* fails the run so nothing is persisted.",
         "height": 140,
         "width": 720,
         "color": 3

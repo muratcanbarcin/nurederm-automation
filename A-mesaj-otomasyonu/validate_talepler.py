@@ -12,6 +12,7 @@ from typing import Any
 from process_messages import (
     CATEGORY_PRIORITY,
     CSV_COLUMNS,
+    CSV_DELIMITER,
     CSV_PATH,
     HANDOFF_CATEGORIES,
     INPUT_PATH,
@@ -106,7 +107,7 @@ def validate_csv(
     if not raw.startswith(UTF8_BOM):
         return [f"{path.name}: missing UTF-8 BOM."]
     with path.open(encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.reader(handle))
+        rows = list(csv.reader(handle, delimiter=CSV_DELIMITER))
     if not rows or tuple(rows[0]) != CSV_COLUMNS:
         return [f"{path.name}: header must be {list(CSV_COLUMNS)}, found {rows[0] if rows else []}."]
 
@@ -176,7 +177,10 @@ def main() -> int:
     schema = sorted(REQUIRED_KEYS | (OPTIONAL_KEYS & set(records[0])) if records else REQUIRED_KEYS)
     print(f"VALIDATION PASSED: {len(records)} records, schema {schema}")
     if CSV_PATH.exists():
-        print(f"CSV EXPORT PASSED: {CSV_PATH.name} (UTF-8 BOM, {len(records)} rows, columns {list(CSV_COLUMNS)})")
+        print(
+            f"CSV EXPORT PASSED: {CSV_PATH.name} (UTF-8 BOM, delimiter '{CSV_DELIMITER}', "
+            f"{len(records)} rows, columns {list(CSV_COLUMNS)})"
+        )
     print_summary(records)
     return 0
 

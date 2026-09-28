@@ -15,6 +15,7 @@ from typing import Any
 
 from process_messages import (
     CSV_COLUMNS,
+    CSV_DELIMITER,
     HANDOFF_CATEGORIES,
     INPUT_PATH,
     OUTPUT_PATH,
@@ -360,6 +361,7 @@ def render_high_priority_details(rows: list[DashboardRow]) -> str:
 def render_export_payload(rows: list[DashboardRow]) -> str:
     """Serialize rows for client-side CSV export, safe for embedding in a <script> element."""
     payload = {
+        "delimiter": CSV_DELIMITER,
         "columns": list(CSV_COLUMNS),
         "rows": {str(row.id): row.csv_record() for row in rows},
     }
@@ -516,16 +518,19 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
         });
       }
 
+      var delimiter = exportData.delimiter;
+
       function csvCell(value) {
         var text = value === null || value === undefined ? "" : String(value);
-        return /[",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+        var needsQuotes = /["\\r\\n]/.test(text) || text.indexOf(delimiter) !== -1;
+        return needsQuotes ? '"' + text.replace(/"/g, '""') + '"' : text;
       }
 
       function downloadCsv() {
-        var lines = [exportData.columns.map(csvCell).join(",")];
+        var lines = [exportData.columns.map(csvCell).join(delimiter)];
         visibleRows().forEach(function (row) {
           var record = exportData.rows[row.getAttribute("data-id")];
-          if (record) { lines.push(record.map(csvCell).join(",")); }
+          if (record) { lines.push(record.map(csvCell).join(delimiter)); }
         });
         var blob = new Blob(["\\uFEFF" + lines.join("\\r\\n") + "\\r\\n"], { type: "text/csv;charset=utf-8" });
         var url = URL.createObjectURL(blob);

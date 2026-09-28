@@ -68,7 +68,7 @@ Akış sırası: **Zamanlayıcı (09:00) → Sayfalama döngüsü → Veri çık
 - **Pagination State** (No-Op): Döngünün giriş noktasıdır. İlk durum da, her yeni sayfa için ilerletilmiş durum da bu node'dan geçer. Bu sayede Code node'ları, o anki turun durumunu her zaman `$('Pagination State').first()` ile okuyabilir.
 - **Fetch Laptop Page** (HTTP Request): `...laptops?page={{ $json.page }}` adresine istek atar. Ayarları:
   - `fullResponse: true` ve `neverError: true`: 4xx/5xx yanıtları istisna fırlatmak yerine `statusCode` alanıyla veri olarak döner ve iş akışı içinde değerlendirilebilir.
-  - `retryOnFail`: 3 deneme ve 3 saniye bekleme. Anlık ağ kesintilerini tolere eder.
+  - `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 2000`: Toplam 3 deneme, denemeler arasında 2 saniye bekleme. Anlık ağ kesintilerini tolere eder.
   - `onError: continueErrorOutput`: Tekrar denemelere rağmen süren DNS, TLS ve zaman aşımı hataları ayrı bir ikinci çıkıştan hata dalına aktarılır.
   - Özel bir `User-Agent` başlığı ve 30 saniyelik zaman aşımı.
 - **Has Next Page?** (IF): Döngünün bitiş koşuludur. Döngü yalnızca aşağıdaki **iki koşul birlikte** sağlandığında devam eder:
@@ -185,7 +185,7 @@ Bu senaryo otomatik testlerle de doğrulanmaktadır: 99. sayfa gerçekten `EXTRA
 
 Baz şablonda 4xx/5xx yanıtı veya zaman aşımı istisna fırlatır ve çalıştırma alarm gönderilmeden sonlanır. Bu iş akışında hatalar üç katmanda ele alınır:
 
-- **Tolerans:** HTTP isteği 3 kez yeniden denenir.
+- **Tolerans (yeniden deneme):** *Fetch Laptop Page* node'u `retryOnFail: true`, `maxTries: 3` ve `waitBetweenTries: 2000` ile yapılandırılmıştır. DNS, TLS veya zaman aşımı gibi geçici bir taşıma hatasında istek, aralarında 2 saniye beklenerek toplam 3 kez denenir. Böylece tek seferlik ağ dalgalanmaları çalıştırmayı durdurmaz. Üç denemenin tamamı başarısız olursa hata, `continueErrorOutput` üzerinden kontrollü hata dalına aktarılır. n8n'in yerleşik yeniden deneme mekanizması sabit aralıklıdır; üstel (exponential) bekleme gerekiyorsa bkz. §7.2.
 - **Sınıflandırma:** Hatalar üç ayrı kapıdan geçer: taşıma hatası çıkışı, durum kodu kontrolü ve içerik sağlığı kontrolü.
 - **Sonuç:** Önce alarm gönderilir, ardından *Stop and Error* ile çalıştırma durdurulur. Kalan tüm beklenmeyen hatalar Error Trigger üzerinden kritik alarm olarak bildirilir.
 

@@ -218,7 +218,7 @@ def build_nodes() -> list[dict[str, Any]]:
             },
             retryOnFail=True,
             maxTries=3,
-            waitBetweenTries=3000,
+            waitBetweenTries=2000,
             onError="continueErrorOutput",
         ),
         if_node(
@@ -356,7 +356,7 @@ def build_nodes() -> list[dict[str, Any]]:
             140,
             3,
             "### Controlled failure branch\n"
-            "Transport errors (after 3 retries), non-2xx status codes, zero products on a page or unparsable "
+            "Transport errors (after 3 attempts, 2 s apart), non-2xx status codes, zero products on a page or unparsable "
             "price cards all land here: alert is sent, then *Abort Execution* fails the run so nothing is persisted.",
         ),
         sticky(

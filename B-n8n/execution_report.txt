@@ -34,7 +34,7 @@ Pagination
 
 Error handling
   [PASS] HTTP node routes transport errors to an error output
-  [PASS] HTTP node retries before failing
+  [PASS] HTTP node retries before failing (3 attempts, 2000 ms apart)
   [PASS] HTTP node exposes statusCode for 4xx/5xx evaluation
   [PASS] HTTP transport error routes to Build Failure Payload
   [PASS] non-2xx status routes to Build Failure Payload
@@ -63,11 +63,11 @@ Code node syntax (node --check)
 
 Live end-to-end simulation (tests/simulate_pipeline.js)
     Pagination finished at page 20 (detected 20), 117 unique products
-    Sample product: {"product_id":"31","title":"Packard 255 G2","description":"15.6\", AMD E2-3800 1.3GHz, 4GB, 500GB, Windows 8.1","price":416.99,"currency":"USD","review_count":2,"rating":2,"url":"https://webscraper.io/test-sites/e-commerce/static/product/31","page":1,"run_id":"sim-1001","scraped_at":"2026-09-28T12:45:27.103Z"}
+    Sample product: {"product_id":"31","title":"Packard 255 G2","description":"15.6\", AMD E2-3800 1.3GHz, 4GB, 500GB, Windows 8.1","price":416.99,"currency":"USD","review_count":2,"rating":2,"url":"https://webscraper.io/test-sites/e-commerce/static/product/31","page":1,"run_id":"sim-1001","scraped_at":"2026-09-28T12:50:04.759Z"}
     
     Alert message (3 changes, 2 anomalies):
     *Laptop Price Monitor - Change Report*
-    Run: `sim-1001` | 2026-09-28T12:45:27.103Z
+    Run: `sim-1001` | 2026-09-28T12:50:04.759Z
     Scanned: 117 products across 20 pages | Changes: 3
     
     *ANOMALY - price moved beyond threshold (2)*
@@ -83,7 +83,7 @@ Live end-to-end simulation (tests/simulate_pipeline.js)
     Page: 99 | Pages completed before failure: 5
     URL: https://webscraper.io/test-sites/e-commerce/static/computers/laptops?page=99
     Detail: ZERO\_PRODUCTS: page 99 returned no parsable laptops (HTTP 200, 30355 bytes)
-    Run: `sim-1001` | 2026-09-28T12:45:27.294Z
+    Run: `sim-1001` | 2026-09-28T12:50:04.792Z
     _No snapshot was persisted for this run._
     
     SIMULATION PASSED

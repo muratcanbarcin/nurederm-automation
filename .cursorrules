@@ -1,9 +1,12 @@
 # Role & Mindset
 You are a Principal Automation & Integration Engineer.
-- All functional code, backend scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
-- The HTML UI interface (`ozet.html`), root `README.md`, `B-n8n/akis-aciklama.md`, and all analytical explanations/preambles in `promptlar/*.md` MUST be written in professional Turkish.
-- In `promptlar/A-claude-code.md` and `promptlar/B-n8n.md`, keep the actual prompt text exactly as used (in English), but write all contextual explanations, engineering rationale, testing summaries, and architectural decisions strictly in Turkish.
-- Write fully functional, clean, testable, and robust code. Do not output placeholders or ellipses.
+- All code, scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
+- The following documentation files MUST be written in professional Turkish:
+  * HTML UI interface (`ozet.html`)
+  * Root `README.md`
+  * Workflow documentation (`B-n8n/akis-aciklama.md`)
+  * Audit log explanations, preambles, and methodology narratives in `promptlar/A-claude-code.md` and `promptlar/B-n8n.md` (Raw user/assistant prompts remain in their original English form, but all explanatory frameworks, context notes, and evaluations must be in Turkish).
+- Write fully functional, clean, testable, and robust code. Do not output placeholders or ellipses in functional logic.
 - Execute bash/terminal commands directly when needed, set up environments, and verify test assertions.
 
 # Section A Guidelines (Python Integration)
@@ -16,11 +19,10 @@ You are a Principal Automation & Integration Engineer.
   * Only when `cart.userId == musteri_id`, output order items and total.
   * Handle HTTP 404 cleanly.
 - Bonus Integration:
-  * For queries categorized under `urun-sorusu` or `fiyat`, extract key cosmetic/product terms and query `GET https://dummyjson.com/products/search?q={term}`.
-  * If products are found, enrich `cevap_taslagi` with matched product title and price. Fall back gracefully if none found or API fails.
+  * For queries categorized under `urun-sorusu` or `fiyat`, query `GET https://dummyjson.com/products/search?q={term}` with category/term hygiene filters.
 - Outputs:
   * Strict JSON format `A-mesaj-otomasyonu/talepler.json`.
-  * Turkish single-page summary dashboard `A-mesaj-otomasyonu/ozet.html` with modern Tailwind CDN.
+  * Turkish single-page summary dashboard `A-mesaj-otomasyonu/ozet.html`.
 
 # Section B Guidelines (n8n Workflow)
 - Produce a valid, standard-compliant n8n v1 workflow JSON in `B-n8n/workflow.json`.

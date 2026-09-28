@@ -84,7 +84,7 @@ Diğer davranışlar:
 | `ORTA` | `iade-sikayet`, bulunamayan (HTTP 404) veya API hatası nedeniyle doğrulanamayan sipariş | #3, #5 |
 | `DUSUK` | Rutin talepler: `urun-sorusu`, `fiyat`, `diger`, sahipliği doğrulanmış sipariş, sipariş numarası içermeyen sipariş sorusu | Diğerleri |
 
-**CSV dışa aktarımı:** Aynı kayıtlar `mesajlar.json` ile birleştirilerek `talepler.csv` dosyasına yazılır. Sütunlar: `id`, `kanal`, `musteri_id`, `konu`, `oncelik`, `devret`, `cevap_taslagi`, `not`. Dosya UTF-8 BOM ile kodlanır; böylece Excel Türkçe karakterleri doğru gösterir. `validate_talepler.py`, CSV'nin BOM'unu, başlığını ve `talepler.json` ile satır satır tutarlılığını da doğrular. `oncelik` alanı içermeyen eski `talepler.json` dosyaları geriye dönük uyumluluk için hâlâ geçerli kabul edilir.
+**CSV dışa aktarımı:** Aynı kayıtlar `mesajlar.json` ile birleştirilerek `talepler.csv` dosyasına yazılır. Sütunlar: `id`, `kanal`, `musteri_id`, `konu`, `oncelik`, `devret`, `cevap_taslagi`, `not`. Dosya UTF-8 BOM ile kodlanır ve alanlar noktalı virgülle (`;`) ayrılır. Böylece Türkçe bölge ayarlı Excel'de dosyaya çift tıklandığında sütunlar doğru ayrılır ve Türkçe karakterler bozulmadan görünür. `validate_talepler.py`, CSV'nin BOM'unu, başlığını ve `talepler.json` ile satır satır tutarlılığını da doğrular. `oncelik` alanı içermeyen eski `talepler.json` dosyaları geriye dönük uyumluluk için hâlâ geçerli kabul edilir.
 
 ### 2.3 Güvenlik ve IDOR koruması
 
@@ -138,7 +138,7 @@ Eşleşme bulunursa ürün adı ve güncel fiyatı yanıt taslağına eklenir. M
 - **Metrik kartları:** İşlenen Toplam Mesaj, İnsana Devredilen Talepler ("Aksiyon Gerekli" rozeti ve yüzde oranı), Yüksek Öncelikli Vakalar (sayı ve vaka listesi), Güvenlik İhlali / Engellenen IDOR (ihlal ayrıntısıyla birlikte).
 - **Kategori dağılımı:** Altı kategori için dinamik sayaç kartları.
 - **Filtreler:** "Tümü", "İnsana Devredilenler", "Doğrudan Yanıtlananlar". Filtreye uyan kayıt yoksa boş durum mesajı gösterilir.
-- **CSV Olarak İndir:** O anda görünen (filtrelenmiş) satırları, `talepler.csv` ile aynı sütun yapısında ve UTF-8 BOM ile tamamen tarayıcı tarafında indirir. Dosya adı aktif filtreyi yansıtır (ör. `talepler-insana-devredilenler.csv`).
+- **CSV Olarak İndir:** O anda görünen (filtrelenmiş) satırları, `talepler.csv` ile aynı sütun yapısında, noktalı virgül ayırıcıyla ve UTF-8 BOM ile tamamen tarayıcı tarafında indirir. Dosya adı aktif filtreyi yansıtır (ör. `talepler-insana-devredilenler.csv`).
 - **Talep tablosu:** Kanal, kategori ve renk kodlu öncelik rozetleri (kırmızı YÜKSEK, amber ORTA, yeşil DÜŞÜK), devir durumu, yanıt taslağı ve dahili not. İngilizce güvenlik notları panoda Türkçe gösterilir; IDOR kaydı "Güvenlik İhlali" rozetiyle öne çıkarılır.
 
 Tüm sayılar veriden hesaplanır; panoda sabit değer bulunmaz. Kullanıcı kaynaklı metinler HTML kaçışından geçirilir.

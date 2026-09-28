@@ -1,15 +1,15 @@
-﻿id,kanal,musteri_id,konu,oncelik,devret,cevap_taslagi,not
-1,whatsapp,7,siparis-durumu,YUKSEK,true,"Merhaba, güvenliğiniz için paylaştığınız sipariş numarasını hesabınızla doğrulayamadık; bu nedenle sipariş detaylarını bu kanaldan paylaşamıyoruz. Ekibimiz kimlik doğrulaması için sizinle iletişime geçecektir.","SECURITY: Potential IDOR / customer mismatch. Customer 7 requested order 12, which belongs to user 12. Order contents concealed; identity verification required."
-2,instagram,5,siparis-durumu,DUSUK,false,"Merhaba, 5 numaralı siparişinizin detayları:
+﻿id;kanal;musteri_id;konu;oncelik;devret;cevap_taslagi;not
+1;whatsapp;7;siparis-durumu;YUKSEK;true;"Merhaba, güvenliğiniz için paylaştığınız sipariş numarasını hesabınızla doğrulayamadık; bu nedenle sipariş detaylarını bu kanaldan paylaşamıyoruz. Ekibimiz kimlik doğrulaması için sizinle iletişime geçecektir.";"SECURITY: Potential IDOR / customer mismatch. Customer 7 requested order 12, which belongs to user 12. Order contents concealed; identity verification required."
+2;instagram;5;siparis-durumu;DUSUK;false;"Merhaba, 5 numaralı siparişinizin detayları:
 - Samsung Galaxy Tab White x4
 - Soft Drinks x4
 - Powder Canister x4
 Toplam tutar: $1,467.88 (indirimli: $1,205.80)
-Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.",Order 5 ownership verified for customer 5.
-3,whatsapp,22,siparis-durumu,ORTA,false,"Merhaba, 9999 numaralı bir siparişe ulaşamadık. Sipariş numaranızı kontrol edip tekrar paylaşabilir misiniz? Yardımcı olmaktan memnuniyet duyarız.",Order 9999 not found (HTTP 404).
-4,instagram,14,istenmeyen-etki,YUKSEK,true,"Merhaba, yaşadığınız durum için çok üzgünüz. Mesajınızı uzman ekibimize ilettik; en kısa sürede sizinle iletişime geçecekler. Geçmiş olsun.",Possible adverse reaction reported. Mandatory human handoff; no medical advice or product recommendation given.
-5,whatsapp,18,iade-sikayet,ORTA,true,"Merhaba, yaşadığınız olumsuzluk için özür dileriz. Talebiniz müşteri hizmetleri ekibimize iletildi; süreçle ilgili en kısa sürede sizinle iletişime geçecekler.",Return/complaint request. Mandatory human handoff.
-6,instagram,3,siparis-durumu,DUSUK,false,"Hello! Here are the details of your order #3:
+Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.";Order 5 ownership verified for customer 5.
+3;whatsapp;22;siparis-durumu;ORTA;false;Merhaba, 9999 numaralı bir siparişe ulaşamadık. Sipariş numaranızı kontrol edip tekrar paylaşabilir misiniz? Yardımcı olmaktan memnuniyet duyarız.;Order 9999 not found (HTTP 404).
+4;instagram;14;istenmeyen-etki;YUKSEK;true;"Merhaba, yaşadığınız durum için çok üzgünüz. Mesajınızı uzman ekibimize ilettik; en kısa sürede sizinle iletişime geçecekler. Geçmiş olsun.";"Possible adverse reaction reported. Mandatory human handoff; no medical advice or product recommendation given."
+5;whatsapp;18;iade-sikayet;ORTA;true;"Merhaba, yaşadığınız olumsuzluk için özür dileriz. Talebiniz müşteri hizmetleri ekibimize iletildi; süreçle ilgili en kısa sürede sizinle iletişime geçecekler.";Return/complaint request. Mandatory human handoff.
+6;instagram;3;siparis-durumu;DUSUK;false;"Hello! Here are the details of your order #3:
 - Fish Steak x1
 - iPhone 13 Pro x1
 - Realme X x1
@@ -17,18 +17,18 @@ Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.",Order 5
 - Dior J'adore x2
 - Party Glasses x5
 Total: $1,794.85 (after discount: $1,625.77)
-Our team will share the shipping update with you shortly.",Order 3 ownership verified for customer 3.
-7,instagram,27,diger,DUSUK,false,Yanıt gönderilmemelidir.,Spam / suspicious link detected. Do not reply or open links; consider blocking the sender.
-8,whatsapp,4,siparis-durumu,DUSUK,false,"Merhaba, 4 numaralı siparişinizin detayları:
+Our team will share the shipping update with you shortly.";Order 3 ownership verified for customer 3.
+7;instagram;27;diger;DUSUK;false;Yanıt gönderilmemelidir.;"Spam / suspicious link detected. Do not reply or open links; consider blocking the sender."
+8;whatsapp;4;siparis-durumu;DUSUK;false;"Merhaba, 4 numaralı siparişinizin detayları:
 - Sports Sneakers Off White Red x3
 - Dior J'adore x4
 Toplam tutar: $689.93 (indirimli: $636.81)
 Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.
-Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.",Order 4 ownership verified for customer 4. Secondary intent: fiyat.
-9,whatsapp,1,urun-sorusu,DUSUK,false,"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'retinol' returned no relevant cosmetic match; generic reply used.
-10,instagram,2,fiyat,DUSUK,false,"Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen ""Olay Ultra Moisture Shea Butter Body Wash"" ürünümüzün güncel fiyatı $12.99. Aktif kampanyalarımızı web sitemizde bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir.","Price inquiry. Verify current price list before sending. Product search 'moisture' matched 'Olay Ultra Moisture Shea Butter Body Wash' (id 119, $12.99); verify against the official catalog before sending. Secondary intent: urun-sorusu."
-11,whatsapp,8,urun-sorusu,DUSUK,false,"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'vitamin c' returned no relevant cosmetic match; generic reply used.
-12,instagram,6,diger,DUSUK,false,"Merhaba, bize ulaştığınız için teşekkürler! Ekibimiz sorunuzu yanıtlamak için en kısa sürede size dönüş yapacak.",General inquiry. Answer with standard company information.
-13,whatsapp,9,urun-sorusu,DUSUK,false,"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'toner' returned no relevant cosmetic match; generic reply used.
-14,instagram,10,fiyat,DUSUK,false,"Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.",Price inquiry. Verify current price list before sending. No product keyword detected; catalog search skipped.
-15,whatsapp,11,urun-sorusu,DUSUK,false,"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. No product keyword detected; catalog search skipped.
+Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.";Order 4 ownership verified for customer 4. Secondary intent: fiyat.
+9;whatsapp;1;urun-sorusu;DUSUK;false;"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.";"Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'retinol' returned no relevant cosmetic match; generic reply used."
+10;instagram;2;fiyat;DUSUK;false;"Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen ""Olay Ultra Moisture Shea Butter Body Wash"" ürünümüzün güncel fiyatı $12.99. Aktif kampanyalarımızı web sitemizde bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir.";"Price inquiry. Verify current price list before sending. Product search 'moisture' matched 'Olay Ultra Moisture Shea Butter Body Wash' (id 119, $12.99); verify against the official catalog before sending. Secondary intent: urun-sorusu."
+11;whatsapp;8;urun-sorusu;DUSUK;false;"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.";"Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'vitamin c' returned no relevant cosmetic match; generic reply used."
+12;instagram;6;diger;DUSUK;false;Merhaba, bize ulaştığınız için teşekkürler! Ekibimiz sorunuzu yanıtlamak için en kısa sürede size dönüş yapacak.;General inquiry. Answer with standard company information.
+13;whatsapp;9;urun-sorusu;DUSUK;false;"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.";"Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'toner' returned no relevant cosmetic match; generic reply used."
+14;instagram;10;fiyat;DUSUK;false;"Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.";"Price inquiry. Verify current price list before sending. No product keyword detected; catalog search skipped."
+15;whatsapp;11;urun-sorusu;DUSUK;false;"Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.";"Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. No product keyword detected; catalog search skipped."
