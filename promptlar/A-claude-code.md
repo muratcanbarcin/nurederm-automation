@@ -49,8 +49,6 @@ Her faz aşağıdaki yapıyı izler:
 - Spam / şüpheli link tespiti (#7).
 - `validate_talepler.py` ile şema, benzersiz kimlik, zorunlu devir ve güvenlik ihlali kuralları.
 
-**Değerlendirme ve revizyonlar:**
-
 *PROMPT:*
 Act as a Principal Software Engineer. Let's execute Phase 1 of our automation project.
 Requirements:
@@ -140,8 +138,6 @@ Tekrar çalıştırmak için:
   - "Tümü", "İnsana Devredilenler" ve "Doğrudan Yanıtlananlar" filtreleri;
   - güvenlik ihlali rozetinin görünürlüğü;
   - boş durum mesajı.
-
-**Değerlendirme ve revizyonlar:**
 
 *PROMPT:*
 Act as a Senior Frontend & Automation Engineer. Let's execute Phase 2: Generating the HTML Summary Dashboard.
@@ -409,7 +405,8 @@ Objectives:
    - Generate `B-n8n/execution_report.txt` by running `.\.venv\Scripts\python.exe B-n8n/validate_workflow.py`.
 
 
-   *OUTPUT:*
+*OUTPUT:*
+
 Dört hedefin hepsi feature/advanced-initiatives dalında tamamlandı ve tüm doğrulamalar geçti: 15 kayıt temiz doğrulanıyor, CSV dışa aktarımı talepler.json ile satır satır eşleşiyor ve n8n raporu 48/48 geçti. Hiçbir şey commit edilmedi.
 
 1. Öncelik puanlaması (process_messages.py) Öncelik iki adımda belirleniyor. Önce kategori bir taban değer veriyor. Ardından sipariş sorgusunun sonucu bu değeri yalnızca yükseltebiliyor. Canlı çalıştırmadaki sonuç:

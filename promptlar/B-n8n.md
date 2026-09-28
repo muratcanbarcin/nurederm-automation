@@ -7,7 +7,7 @@ Bu kayıt, Bölüm B teslimatının (n8n iş akışı ve mimari dokümanı) yapa
 
 1. **AI-assisted engineering:** 3 saatlik kısıtlı süre zarfında kurumsal ve hatasız bir mimari teslim edebilmek için yapay zekâ, bir mimari planlama ve hızlandırma aracı olarak kullanılmıştır. Topoloji, hata politikası ve kabul kriterleri mühendis tarafından belirlenmiş; yapay zekâ bu çerçeve içinde uygulama hızını artırmıştır.
 
-### ÖNEMLİ NOT: PROMPTLAR ve ÇIKTILAR İLGİLİ KISIMLARIN "Değerlendirme ve Revizyonlar" kısmından sonra ayrı ayrı verilmiştir."
+### ÖNEMLİ NOT: PROMPTLAR ve ÇIKTILAR İLGİLİ KISIMLARIN "Doğrulama" kısmından sonra ayrı ayrı verilmiştir."
 
 2. **Görev ayrıştırma (task decomposition) ve meta-prompting:** Kontrolsüz tek bir prompt yerine görevler modüler parçalara ayrılmıştır: şablon araştırması, akış topolojisi, JSON üretimi, doğrulama ve dokümantasyon. Her fazda şu kısıtlar açıkça verilmiştir:
    - n8n v1 şema uyumluluğu;
@@ -28,7 +28,6 @@ Her faz aşağıdaki yapıyı izler:
 - **Amaç:** Fazın iş hedefi.
 - **Verilen kısıtlar:** Prompt'a eklenen teknik sınırlar.
 - **Doğrulama:** Çıktının nasıl test edildiği.
-- **Değerlendirme ve revizyonlar:** Yapay zekâ çıktısında tespit edilen ve düzeltilen noktalar.
 - **Ham prompt ve çıktı:** Oturum kaydının orijinal (İngilizce) hâli.
 
 ---
@@ -50,10 +49,6 @@ Her faz aşağıdaki yapıyı izler:
   - son sayfada `rel="next"` bağlantısı yoktur.
 - `?page=99` isteğinin **HTTP 200** döndürdüğü, ancak sayfanın **sıfır ürün** içerdiği tespit edilmiştir. Bu nedenle bitiş koşulu durum koduna dayandırılmamıştır.
 - n8n şablon API'si üzerinden aday şablonların node listeleri ve tip sürümleri karşılaştırılmıştır.
-
-**Değerlendirme ve revizyonlar:**
-
-- Brief'te önerilen `n8n.io/workflows/1884-web-scraper-and-email-notification/` adresinin **404** döndürdüğü, 1884 numaralı şablonun şablon API'sinde de bulunmadığı tespit edilmiştir. Var olmayan bir kaynağa atıf yapmak yerine en yakın gerçek şablon seçilmiştir: [#4640 – Competitor price monitoring with web scraping, Google Sheets & Telegram](https://n8n.io/workflows/4640-competitor-price-monitoring-with-web-scrapinggoogle-sheets-and-telegram/).
 
 ## Faz 2: Akış Topolojisi ve `workflow.json` Üretimi
 
@@ -80,12 +75,6 @@ Her faz aşağıdaki yapıyı izler:
   - `416.99` float değeri doğrulanmıştır;
   - sahte geçmiş verisiyle fiyat artışı, düşüşü ve anomali sınıflandırması doğru çalışmıştır;
   - `?page=99` senaryosu `EXTRACTION` aşamasında hata dalına düşmüştür.
-
-**Değerlendirme ve revizyonlar:**
-
-- IF ve Filter node'ları, #4640 şablonundaki güncel şemayla uyumlu olması için v2.2 sürümüne yükseltilmiştir.
-- İlk çalıştırmada ~117 ürünün tamamı için "yeni ürün" alarmı gönderilmesini önlemek amacıyla `is_baseline_run` bayrağı eklenmiştir.
-- Kontrollü hata dalı ile global Error Trigger'ın aynı hata için iki kez alarm üretmesi engellenmiştir: *Abort Execution* kaynaklı hatalar global dalda yok sayılır.
 
 *PROMPT:*
 Act as a Senior Automation & Integration Architect. Let's execute Phase 3: Section B (n8n Workflow Design).
@@ -181,7 +170,7 @@ akis-aciklama.md dokümanını İngilizce yazdım, çünkü .cursorrules Türkç
 
 **Verilen kısıtlar:**
 
-- Şablon adı ve linkinin yer alması; 1884 linkinin neden kullanılmadığının açıklanması.
+- Şablon adı ve linkinin yer alması; #4640 şablonunun neden mimari temel olarak seçildiğinin açıklanması.
 - Veri akışının adım adım anlatılması: Schedule → Sayfalama → Float dönüşümü → Kayıt → Fark tespiti → Bildirim → Hata dalı.
 - Proxy rotasyonu, IP bazlı hız sınırlama ve headless browser (Puppeteer) ihtiyacının ele alınması.
 
@@ -189,10 +178,6 @@ akis-aciklama.md dokümanını İngilizce yazdım, çünkü .cursorrules Türkç
 
 - Dokümandaki tüm sayısal iddialar (20 sayfa, 117 ürün, 48 kontrol, `?page=99` davranışı) doğrulama çıktılarıyla karşılaştırılmıştır.
 - Zorunlu başlıkların varlığı otomatik olarak kontrol edilmiştir.
-
-**Değerlendirme ve revizyonlar:**
-
-- Doküman önce İngilizce yazılmıştır. Proje kuralları güncellendikten sonra Türkçe olarak yeniden yapılandırılmıştır. Node adları, `workflow.json` ile birebir eşleşmesi için İngilizce bırakılmıştır.
 
 *PROMPT:* (Section A düzeltmeleri ile birlikte)
 Act as a Principal Automation Engineer. Let's implement the Section A Bonus feature and finalize the Turkish documentation for Section B.

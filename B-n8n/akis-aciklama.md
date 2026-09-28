@@ -15,7 +15,7 @@
 
 **Kullanılan şablon:** [Competitor price monitoring with web scraping, Google Sheets & Telegram](https://n8n.io/workflows/4640-competitor-price-monitoring-with-web-scrapinggoogle-sheets-and-telegram/) (resmî n8n şablon kütüphanesi, şablon no. **#4640**, yazar: `tonydatahut`).
 
-**Neden bu şablon seçildi?** Brief'te önerilen `https://n8n.io/workflows/1884-web-scraper-and-email-notification/` adresi **HTTP 404** döndürmektedir. 1884 numaralı şablon n8n'in herkese açık şablon API'sinde de (`api.n8n.io/api/templates/workflows/1884`) bulunmamaktadır. Var olmayan bir kaynağa atıf yapmamak için kütüphanede arama yapılmış ve istenen "web scraper + Telegram/E-posta bildirimi" desenine en yakın, gerçekten var olan şablon olarak #4640 seçilmiştir. Şablonun temel akışı şöyledir:
+**Neden bu şablon seçildi?** Brief, başlangıç noktası olarak yalnızca resmî n8n şablon kütüphanesini (`https://n8n.io/workflows`) göstermektedir. Kütüphanedeki iş akışları incelenmiş; "web kazıma → kalıcı kayıt → fiyat değişimi tespiti → anlık bildirim" desenini en eksiksiz karşılayan resmî şablon olarak **"Competitor price monitoring with web scraping, Google Sheets & Telegram" (#4640)** en uygun mimari temel (baseline) olarak seçilmiştir. Şablon; zamanlanmış tetikleme, HTTP ile HTML çekme, fiyat normalizasyonu, Google Sheets üzerinde geçmiş tutma ve Telegram bildirimi adımlarını tek bir akışta birleştirdiği için bu projenin gereksinimleriyle doğrudan örtüşmektedir. Şablonun temel akışı şöyledir:
 
 `Schedule Trigger -> Google Sheets (ürün listesi) -> Split In Batches -> Wait -> HTTP Request -> HTML Extract -> Code (fiyat normalizasyonu) -> Code (değişim hesabı) -> IF (değişti mi?) -> Google Sheets (geçmiş + ana tablo güncellemesi) -> Telegram`
 

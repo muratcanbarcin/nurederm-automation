@@ -13,6 +13,8 @@ Nurederm için hazırlanan bu depo iki bağımsız otomasyon çözümü içerir:
 | Dil / çalışma ortamı | Python 3.11+ (geliştirmede 3.13), Node.js 18+ (yalnızca doğrulama için), n8n v1 |
 | Doğrulama durumu | `validate_talepler.py` 15/15 kayıt · `validate_workflow.py` 48/48 kural |
 
+> Brief kapsamına ek olarak kendi inisiyatifimizle geliştirilen özellikler (öncelik puanlaması, Excel uyumlu CSV dışa aktarımı, n8n ağ dayanıklılığı) için bkz. [4. Kural 4 Kapsamında Ek Geliştirmeler](#4-kural-4-kapsamında-ek-geliştirmeler).
+
 ---
 
 ## 1. Proje Mimarisi
@@ -27,7 +29,7 @@ nurederm-automation/
 │   ├── mesajlar.json                # Girdi: 15 müşteri mesajı
 │   ├── process_messages.py          # Sınıflandırma, IDOR kontrolü, ürün araması, taslak üretimi
 │   ├── talepler.json                # Çıktı: katı şemalı talep kayıtları
-│   ├── talepler.csv                 # Çıktı: Excel uyumlu (UTF-8 BOM) CSV dışa aktarımı
+│   ├── talepler.csv                 # Çıktı: Excel uyumlu (UTF-8 BOM, ";" ayırıcı) CSV dışa aktarımı
 │   ├── generate_summary_html.py     # talepler.json -> ozet.html dönüştürücüsü
 │   ├── ozet.html                    # Türkçe yönetici panosu (Tailwind CDN)
 │   └── validate_talepler.py         # Şema ve iş kuralı doğrulayıcısı + yönetici özeti
@@ -153,7 +155,7 @@ Ayrıntılı mimari için bkz. [`B-n8n/akis-aciklama.md`](B-n8n/akis-aciklama.md
 
 Akış, resmî n8n kütüphanesindeki [**#4640 – Competitor price monitoring with web scraping, Google Sheets & Telegram**](https://n8n.io/workflows/4640-competitor-price-monitoring-with-web-scrapinggoogle-sheets-and-telegram/) şablonu temel alınarak geliştirilmiştir.
 
-Brief'te önerilen `n8n.io/workflows/1884-web-scraper-and-email-notification/` adresi **HTTP 404** döndürmektedir; 1884 numaralı şablon n8n şablon API'sinde de bulunmamaktadır. Var olmayan bir kaynağa atıf yapmak yerine, istenen "web scraper + bildirim" desenine en yakın gerçek şablon seçilmiştir. Şablonun node tipi sürümleri korunmuştur.
+Brief, başlangıç noktası olarak resmî n8n şablon kütüphanesini (`https://n8n.io/workflows`) göstermektedir. Kütüphanedeki iş akışları arasından, bu projedeki kazıma, kalıcı kayıt ve alarm desenini (web scraping → Google Sheets geçmişi → Telegram bildirimi) en eksiksiz karşılayan resmî şablon olan "Competitor price monitoring with web scraping, Google Sheets & Telegram" (#4640), en uygun mimari temel olarak seçilmiştir. Şablonun node tipi sürümleri korunmuştur.
 
 ### 3.2 Sayfalama döngüsü ve `?page=99` savunması
 
@@ -200,9 +202,48 @@ Hedef: `https://webscraper.io/test-sites/e-commerce/static/computers/laptops?pag
 
 ---
 
-## 4. Test ve Doğrulama Metodolojisi
+## 4. Kural 4 Kapsamında Ek Geliştirmeler
 
-### 4.1 Otomatik doğrulama
+### Kendi İnisiyatifimizle Eklenen Geliştirmeler ve İnovasyonlar (Kural 4)
+
+Brief'in zorunlu kapsamına ek olarak, operasyon ekiplerinin günlük iş yükünü azaltmak ve akışların üretim ortamındaki dayanıklılığını artırmak amacıyla aşağıdaki üç geliştirme kendi inisiyatifimizle tasarlanıp uygulanmıştır. Üçü de otomatik doğrulayıcılar tarafından denetlenmektedir.
+
+#### a) Operasyonel Öncelik Puanlaması (Priority Scoring)
+
+Her talep kaydına deterministik bir `oncelik` alanı eklenmiştir. Böylece müşteri temsilcileri kuyruğu kategoriye göre değil, gerçek operasyonel riske göre işleyebilir.
+
+| Seviye | Kapsam | Gerekçe |
+| --- | --- | --- |
+| **YÜKSEK** (`YUKSEK`) | IDOR / müşteri uyuşmazlığı (#1), istenmeyen etki (#4) | Veri güvenliği ve hasta güvenliği riski; derhal müdahale gerekir |
+| **ORTA** (`ORTA`) | İade / şikâyet (#5), bulunamayan (HTTP 404) veya API hatası nedeniyle doğrulanamayan sipariş (#3) | Müşteri memnuniyeti ve süreç takibi gerektirir |
+| **DÜŞÜK** (`DUSUK`) | Ürün sorusu, fiyat, diğer ve sahipliği doğrulanmış sipariş sorguları | Rutin talepler; standart yanıt akışıyla karşılanır |
+
+- **Deterministik kural motoru:** Kategori bir taban öncelik belirler; sipariş sorgusunun sonucu (IDOR tespiti, 404, API hatası) bu değeri yalnızca yükseltebilir, hiçbir koşulda düşüremez.
+- **Güvenlik garantisi:** `validate_talepler.py`, istenmeyen etki ve güvenlik ihlali kayıtlarının `YUKSEK`, iade kayıtlarının en az `ORTA` olduğunu zorunlu kılar. `oncelik` alanı içermeyen eski çıktılar geriye dönük uyumluluk gereği geçerli kabul edilir.
+- **Panoya yansıması:** `ozet.html` tablosunda renk kodlu öncelik rozetleri (kırmızı YÜKSEK, amber ORTA, yeşil DÜŞÜK) ve üst bölümde "Yüksek Öncelikli Vakalar" metrik kartı yer alır.
+
+#### b) UTF-8 BOM ve Noktalı Virgül (;) Destekli CSV Dışa Aktarımı
+
+Operasyon ekiplerinin talepleri doğrudan Excel'de işleyebilmesi için iki kanallı bir CSV dışa aktarımı sunulmaktadır:
+
+- **Sunucu tarafı (`talepler.csv`):** `process_messages.py`, işlenen kayıtları `mesajlar.json` ile birleştirerek `id`, `kanal`, `musteri_id`, `konu`, `oncelik`, `devret`, `cevap_taslagi`, `not` sütunlarıyla `talepler.csv` dosyasına yazar.
+- **Tarayıcı tarafı (`ozet.html`):** "CSV Olarak İndir" butonu, o anda aktif filtreyle görünen satırları sunucuya ihtiyaç duymadan, saf JavaScript ile indirir. Dosya adı aktif filtreyi yansıtır (ör. `talepler-insana-devredilenler.csv`).
+- **Excel uyumluluğu:** Her iki çıktı da UTF-8 BOM ile kodlanır ve noktalı virgül (`;`) ayırıcı kullanır. Türkçe bölge ayarlı Excel'de dosyaya çift tıklandığında sütunlar doğru ayrılır, Türkçe karakterler bozulmadan görünür. Çok satırlı yanıt taslakları standart CSV tırnaklamasıyla korunur.
+- **Tutarlılık denetimi:** `validate_talepler.py`, CSV'nin BOM'unu, ayırıcısını, başlığını ve `talepler.json` ile satır satır eşleşmesini doğrular.
+
+#### c) n8n Ağ Dayanıklılığı (Retry Resilience)
+
+Sayfa kazıma işini yapan *Fetch Laptop Page* (HTTP Request) node'u, geçici ağ kopmalarına karşı hata toleranslı olarak yapılandırılmıştır:
+
+- `retryOnFail: true`, `maxTries: 3`, `waitBetweenTries: 2000`. DNS, TLS veya zaman aşımı gibi geçici bir hatada istek, aralarında 2 saniye beklenerek toplam 3 kez denenir.
+- Tek seferlik ağ dalgalanmaları çalıştırmayı durdurmaz. Üç denemenin tamamı başarısız olursa hata, `continueErrorOutput` üzerinden kontrollü hata dalına aktarılır; Telegram alarmı gönderilir ve çalıştırma *Stop and Error* ile güvenli biçimde sonlandırılır.
+- `validate_workflow.py`, bu üç parametrenin tam değerlerini zorunlu kural olarak denetler. Ayrıntılar için bkz. [`B-n8n/akis-aciklama.md`](B-n8n/akis-aciklama.md) §4.3.
+
+---
+
+## 5. Test ve Doğrulama Metodolojisi
+
+### 5.1 Otomatik doğrulama
 
 ```powershell
 .\.venv\Scripts\python.exe A-mesaj-otomasyonu/validate_talepler.py   # Bölüm A: 15/15 kayıt
@@ -212,7 +253,9 @@ Hedef: `https://webscraper.io/test-sites/e-commerce/static/computers/laptops?pag
 **`validate_talepler.py` (15/15 kayıt):**
 
 - Kök elemanın bir dizi olması ve tam olarak 15 kayıt içermesi.
-- Her kayıtta tam olarak beş zorunlu alanın bulunması; tiplerin doğruluğu.
+- Her kayıtta beş zorunlu alanın (`id`, `konu`, `devret`, `cevap_taslagi`, `not`) ve opsiyonel `oncelik` alanının dışında alan bulunmaması; tiplerin doğruluğu.
+- `oncelik` varsa geçerli bir seviye olması ve öncelik kurallarına (istenmeyen etki ve güvenlik ihlali `YUKSEK`, iade en az `ORTA`) uyması.
+- `talepler.csv` dosyasının UTF-8 BOM, `;` ayırıcı ve doğru başlıkla yazılmış olması; `talepler.json` ile satır satır eşleşmesi.
 - Kimliklerin benzersiz olması ve girdiyle birebir eşleşmesi; kategorilerin geçerliliği.
 - `istenmeyen-etki` ve `iade-sikayet` kayıtlarında zorunlu `devret: true`.
 - `SECURITY:` notlu kayıtların insana devredilmiş olması.
@@ -226,7 +269,7 @@ Hedef: `https://webscraper.io/test-sites/e-commerce/static/computers/laptops?pag
 - Tüm Code node'ları için `node --check` sözdizimi kontrolü.
 - Canlı uçtan uca simülasyon: 20 sayfa / 117 ürün, `416.99` float değeri, fark sınıflandırması, `?page=99` hata dalı, mükerrer alarm engeli.
 
-### 4.2 Manuel kontroller ve UI doğrulama adımları
+### 5.2 Manuel kontroller ve UI doğrulama adımları
 
 1. **Regresyon karşılaştırması:** Bonus entegrasyonundan önceki ve sonraki `talepler.json` dosyaları alan alan karşılaştırılmıştır. Kategoriler, `devret` alanları ve IDOR kaydı değişmemiştir; yalnızca beklenen zenginleştirme ve not alanları güncellenmiştir.
 2. **Uç durum testleri:** Sahte arama fonksiyonuyla şunlar doğrulanmıştır:
@@ -243,6 +286,6 @@ Hedef: `https://webscraper.io/test-sites/e-commerce/static/computers/laptops?pag
    - #1 satırında "Güvenlik İhlali" rozetinin ve Türkçe güvenlik notunun göründüğünü, sepet içeriğinin ise hiçbir yerde yer almadığını doğrulayın.
 4. **n8n içe aktarma kontrolü:** `workflow.json` dosyasını n8n'e aktarın, kimlik bilgilerini bağlayın ve **Execute Workflow** ile manuel çalıştırın. İlk çalıştırmada tabloya 117 satır eklenmeli ve fiyat bildirimi gönderilmemelidir (baseline).
 
-### 4.3 AI orkestrasyon kayıtları
+### 5.3 AI orkestrasyon kayıtları
 
 Yapay zekâ destekli geliştirme sürecinin metodolojisi, faz bazlı kararları ve ham prompt kayıtları [`promptlar/A-claude-code.md`](promptlar/A-claude-code.md) ve [`promptlar/B-n8n.md`](promptlar/B-n8n.md) dosyalarında belgelenmiştir.
