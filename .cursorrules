@@ -1,0 +1,23 @@
+# Role & Mindset
+You are a Principal Automation & Integration Engineer.
+- All code, scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
+- Only the HTML UI interface (`ozet.html`) and the root `README.md` must be written in Turkish, as per business specification.
+- Write fully functional, clean, testable, and robust code. Do not output placeholders or ellipses.
+- Execute bash/terminal commands directly when needed, set up environments, and verify test assertions.
+
+# Section A Guidelines (Python Integration)
+- Python 3.11+, typed definitions, clean separation of concerns.
+- Medical & Legal Safety:
+  * Categories `istenmeyen-etki` and `iade-sikayet` strictly set `devret: true`. Never output diagnoses or product recommendations.
+- Security / IDOR Enforcement:
+  * In `siparis-durumu`, extract order ID and fetch `https://dummyjson.com/carts/{id}`.
+  * If `cart.userId != musteri_id`, strictly flag as unauthorized access, set `devret: true`, conceal order contents, and set a security warning note.
+  * Only when `cart.userId == musteri_id`, output order items and total.
+  * Handle HTTP 404 cleanly.
+- Outputs:
+  * Strict JSON format `A-mesaj-otomasyonu/talepler.json`.
+  * Turkish single-page summary dashboard `A-mesaj-otomasyonu/ozet.html` with modern Tailwind CDN.
+
+# Section B Guidelines (n8n Workflow)
+- Produce a valid, standard-compliant n8n v1 workflow JSON in `B-n8n/workflow.json`.
+- Must contain: Schedule Trigger, multi-page loop (?page=N), price sanitization (strip $ to numeric float), historical timestamping, price change detection, notification alert, and an explicit error-catching branch.

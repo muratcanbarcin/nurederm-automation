@@ -1,0 +1,17 @@
+[
+  { "id": 1,  "kanal": "whatsapp",  "musteri_id": 7,  "mesaj": "Merhaba, 12 numaralı siparişim nerede? Ne zaman kargoya verilir?" },
+  { "id": 2,  "kanal": "instagram", "musteri_id": 5,  "mesaj": "5 numaralı siparişimin durumu nedir acaba?" },
+  { "id": 3,  "kanal": "whatsapp",  "musteri_id": 22, "mesaj": "9999 numaralı siparişim hâlâ elime ulaşmadı, kontrol eder misiniz?" },
+  { "id": 4,  "kanal": "instagram", "musteri_id": 14, "mesaj": "Dün aldığım serumu kullandım, yüzüm yandı ve kızardı. Ne yapmalıyım?" },
+  { "id": 5,  "kanal": "whatsapp",  "musteri_id": 18, "mesaj": "Kutu ezik geldi, ürünü iade etmek istiyorum." },
+  { "id": 6,  "kanal": "instagram", "musteri_id": 3,  "mesaj": "Hi, where is my order #3? It has been a week." },
+  { "id": 7,  "kanal": "instagram", "musteri_id": 27, "mesaj": "Takipçi kasmak ister misiniz? 🔥 %100 organik takipçi: bit.ly/takip-artir" },
+  { "id": 8,  "kanal": "whatsapp",  "musteri_id": 4,  "mesaj": "Güneş kreminin fiyatı ne kadar? Bir de 4 numaralı siparişim ne zaman gelir?" },
+  { "id": 9,  "kanal": "whatsapp",  "musteri_id": 1,  "mesaj": "Retinol serumunuz var mı? Kuru ciltte kullanılır mı?" },
+  { "id": 10, "kanal": "instagram", "musteri_id": 2,  "mesaj": "Nemlendirici krem ne kadar?" },
+  { "id": 11, "kanal": "whatsapp",  "musteri_id": 8,  "mesaj": "C vitamini serumu hangi cilt tipine uygundur?" },
+  { "id": 12, "kanal": "instagram", "musteri_id": 6,  "mesaj": "Siparişler hangi kargo firmasıyla gönderiliyor?" },
+  { "id": 13, "kanal": "whatsapp",  "musteri_id": 9,  "mesaj": "Tonik 200 ml mi? İçeriğinde alkol var mı?" },
+  { "id": 14, "kanal": "instagram", "musteri_id": 10, "mesaj": "İndirim kodunuz var mı, fiyat listesi paylaşır mısınız?" },
+  { "id": 15, "kanal": "whatsapp",  "musteri_id": 11, "mesaj": "Merhaba, ürünleriniz hayvanlar üzerinde test ediliyor mu?" }
+]
