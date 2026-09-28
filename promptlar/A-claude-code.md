@@ -230,6 +230,8 @@ Sayfaya çift tıklayınca sunucu olmadan açılıyor. Yalnızca Tailwind CDN'de
 - Mesajda özel bir terim (retinol, C vitamini, güneş kremi) varsa genel terime (serum, krem) geri düşülmemesi kuralı getirilmiştir. Retinol serumu soran müşteriye alakasız bir serum sunulması yanıltıcı olurdu.
 - Regresyon karşılaştırmasında, zenginleştirilmiş fiyat yanıtının (#10) sonuna gereksiz bir "ürün sorunuzla ilgili bilgiyi ayrıca paylaşacağız" satırı eklendiği tespit edilmiştir. Bunun üzerine taslağın zaten kapsadığı ikincil niyetleri (`covered_intents`) tekrarlamayan bir düzeltme yapılmıştır.
 
+**Ham prompt ve çıktı:**
+
 *PROMPT:* (Section B düzeltmeleri ile birlikte)
 Act as a Principal Automation Engineer. Let's implement the Section A Bonus feature and finalize the Turkish documentation for Section B.
 
@@ -373,3 +375,72 @@ Metodolojide geçen tarayıcı doğrulamasını da gerçekten yaptım. Panoyu ye
 metrik kartları 15 / 3 / 1 gösteriyor;
 "İnsana Devredilenler" filtresi yalnızca #1, #4 ve #5'i, "Doğrudan Yanıtlananlar" kalan 12 kaydı gösteriyor, "Tümü" hepsini geri getiriyor;
 #1 satırında güvenlik rozeti var ve sepet içeriği sızmıyor.
+
+
+## Faz 4: Kural 4 İnisiyatifleri — Öncelik Puanlaması ve CSV Entegrasyonu
+
+**Ham prompt ve çıktı:**
+*PROMPT:*
+
+Act as a Principal Automation & Integration Engineer. We are implementing Rule 4 initiatives for Section A on branch `feature/advanced-initiatives`.
+
+Objectives:
+1. Operational Priority Scoring (A-mesaj-otomasyonu/process_messages.py):
+   - Add a deterministic `oncelik` field to each processed message:
+     * "YUKSEK" (High): For `istenmeyen-etki` (patient safety risks) and IDOR security mismatch (#1).
+     * "ORTA" (Medium): For `iade-sikayet` and unverified/not-found order queries (#3).
+     * "DUSUK" (Low): For routine inquiries (`urun-sorusu`, `fiyat`, `diger`).
+   - Reflect this in the schema and output dictionary.
+
+2. CSV Export Pipeline:
+   - In `process_messages.py`, add a function to export the processed records into `A-mesaj-otomasyonu/talepler.csv` with standard UTF-8 BOM encoding (for clean Excel compatibility).
+   - Columns: id, kanal, musteri_id, konu, oncelik, devret, cevap_taslagi, not.
+
+3. Frontend Dashboard Updates (A-mesaj-otomasyonu/generate_summary_html.py):
+   - Update `ozet.html` generation:
+     * Add a Priority column in the table displaying color-coded badges (Red for YÜKSEK, Amber for ORTA, Green for DÜŞÜK).
+     * Add an executive metric card at the top: "Yüksek Öncelikli Vakalar" with count.
+     * Add an interactive "CSV Olarak İndir" button in the dashboard toolbar that triggers a download of the currently visible/filtered rows as a CSV file using pure client-side JavaScript.
+
+4. Execution & Validation:
+   - Run `process_messages.py` using `.\.venv\Scripts\python.exe`.
+   - Run `generate_summary_html.py` to rebuild the dashboard.
+   - Run `validate_talepler.py` and ensure backward compatibility (all 15 items still validate cleanly).
+   - Generate `B-n8n/execution_report.txt` by running `.\.venv\Scripts\python.exe B-n8n/validate_workflow.py`.
+
+
+   *OUTPUT:*
+Dört hedefin hepsi feature/advanced-initiatives dalında tamamlandı ve tüm doğrulamalar geçti: 15 kayıt temiz doğrulanıyor, CSV dışa aktarımı talepler.json ile satır satır eşleşiyor ve n8n raporu 48/48 geçti. Hiçbir şey commit edilmedi.
+
+1. Öncelik puanlaması (process_messages.py) Öncelik iki adımda belirleniyor. Önce kategori bir taban değer veriyor. Ardından sipariş sorgusunun sonucu bu değeri yalnızca yükseltebiliyor. Canlı çalıştırmadaki sonuç:
+
+Öncelik	Kayıtlar
+YUKSEK
+#1 (IDOR uyuşmazlığı), #4 (istenmeyen etki)
+ORTA
+#3 (bulunamayan sipariş, HTTP 404), #5 (iade)
+DUSUK
+Diğer 11 kayıt
+oncelik alanı TicketResult şemasına eklendi ve JSON'da konu'nun hemen ardından geliyor. JSON'daki tek değişiklik bu alanın eklenmesi; kategori, devret, yanıt ve not alanları aynı kaldı.
+
+2. CSV dışa aktarımı export_csv() kayıtları mesajlar.json ile birleştirip talepler.csv dosyasına istenen sütun sırasıyla yazıyor. Dosya UTF-8 BOM ile kodlanıyor (dosyanın ilk baytları EF BB BF). Çok satırlı yanıt taslakları doğru şekilde tırnak içine alınıyor.
+
+3. Pano (ozet.html)
+
+Tabloya renk kodlu "Öncelik" sütunu eklendi: kırmızı YÜKSEK, amber ORTA, yeşil DÜŞÜK.
+Üstte "Yüksek Öncelikli Vakalar" kartı var: sayı 2, altında #1 ve #4 listeleniyor.
+"CSV Olarak İndir" butonu, o anda görünen satırları tamamen tarayıcı tarafında indiriyor. Tarayıcıda test ettim: "İnsana Devredilenler" filtresinde yalnızca #1, #4 ve #5 geldi, dosya adı talepler-insana-devredilenler.csv oldu, BOM vardı ve Türkçe karakterler bozulmadı. Görünür satır yoksa buton devre dışı kalıyor.
+Tabloda öncelik rozetleri
+
+4. Doğrulama validate_talepler.py anahtarları birebir karşılaştırıyordu, bu yüzden oncelik eklenince doğrulama kırılacaktı. Validator'ı şöyle güncelledim:
+
+oncelik opsiyonel. Güncellemeden önce eski formatlı dosyayı da doğrulattım, sorunsuz geçti.
+Alan varsa şu kurallar uygulanıyor: istenmeyen etki ve güvenlik ihlali YUKSEK, iade en az ORTA olmalı. Bu kuralların bozulduğu ve KRITIK gibi geçersiz bir değer girildiği test kayıtlarını hepsini yakaladı.
+CSV'nin BOM'u, başlığı ve JSON ile satır satır eşleşmesi de kontrol ediliyor.
+B-n8n/execution_report.txt UTF-8 olarak üretildi. PowerShell'in > yönlendirmesi dosyayı UTF-16 yazacağı için çıktıyı cmd üzerinden yönlendirdim. README'de artık yanlış olan şema cümlesini düzelttim; öncelik tablosunu ve CSV ile pano açıklamalarını ekledim.
+
+Kararınızı bekleyen iki konu:
+
+Sipariş numarası olmayan sipariş soruları DÜŞÜK sayılıyor. Brief'teki "doğrulanamayan" ifadesini 404 ve API hatası olarak yorumladım; bunlar ORTA. Numarasız soruyu da ORTA saymak isterseniz tek satırlık bir değişiklik.
+CSV virgülle ayrılmış. Türkçe bölge ayarlı Excel ise noktalı virgül bekler. Dosyaya çift tıklayınca tüm veri tek sütuna düşebilir; Excel'deki "Veri > Metinden" içe aktarımında sorun olmaz. İsterseniz ayırıcıyı ; yapabilirim.
+

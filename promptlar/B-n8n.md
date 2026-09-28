@@ -254,3 +254,57 @@ Node adları workflow.json'daki adlarla eşleşsin diye İngilizce bıraktım.
 Değişiklikler henüz commit edilmedi. Bir de __pycache__/process_messages.cpython-313.pyc dosyası git'te izleniyor; bu tür derleme çıktılarını .gitignore'a eklemek iyi olur.
 
 **!!! SON TESLİMATA DAİR PROMPTLAR @A-claude-code.md dosyasındadır**
+
+## Faz 4: Kural 4 İnisiyatifleri — HTTP Yeniden Deneme (Retry Resilience) Mimarisi
+
+*PROMPT:*
+
+Act as a Principal Automation Engineer. Let's finish the final polish on `feature/advanced-initiatives`:
+
+1. CSV Semicolon Delimiter:
+   - In `process_messages.py` and in `ozet.html` client-side export script, switch the CSV delimiter from comma (`,`) to semicolon (`;`).
+   - Keep UTF-8 BOM encoding intact so double-clicking on Turkish regional Excel opens columns properly separated.
+
+2. Initiative 3 (n8n Resilience & Retry Logic):
+   - In `B-n8n/build_workflow.py` and `B-n8n/workflow.json`, update the HTTP Request node configuration for page scraping:
+     Add retry resilience properties:
+     `"retryOnFail": true`, `"maxTries": 3`, `"waitBetweenTries": 2000`.
+   - Update `B-n8n/akis-aciklama.md` under the architectural improvements section with a brief mention of this 3-attempt backoff retry logic.
+
+3. Re-run and Update Artifacts:
+   - Re-run `process_messages.py` to regenerate `talepler.csv`.
+   - Re-run `generate_summary_html.py`.
+   - Re-run `validate_workflow.py` and refresh `B-n8n/execution_report.txt`.
+   - Ensure all validations pass cleanly.
+
+
+   *OUTPUT:*
+   Üç madde de tamamlandı ve tüm doğrulamalar geçti. Yeniden ürettiğim her şey feature/advanced-initiatives dalında; henüz commit etmedim.
+
+1. CSV ayırıcısı artık noktalı virgül (;)
+
+process_messages.py içine tek bir CSV_DELIMITER = ";" sabiti ekledim. Dosya yazımı, validator ve panodaki indirme betiği bu sabiti kullanıyor, yani üçü aynı ayırıcıda kalıyor.
+Panoda noktalı virgül içeren hücreler artık tırnak içine alınıyor.
+talepler.csv hâlâ UTF-8 BOM ile başlıyor ve başlık satırı id;kanal;musteri_id;konu;oncelik;devret;cevap_taslagi;not.
+Validator dosyayı ; ile okuyup talepler.json ile satır satır karşılaştırıyor; 15 kayıt geçti.
+Pano betiğinin sözdizimini node --check ile doğruladım. İndirme butonunu bu değişiklikten sonra tarayıcıda yeniden tıklayarak test etmedim; değişiklik sadece ayırıcı karakteri.
+2. n8n yeniden deneme ayarları
+
+retryOnFail: true ve maxTries: 3 zaten tanımlıydı. Değişen tek değer bekleme süresi: waitBetweenTries 3000 ms'den 2000 ms'ye indi.
+workflow.json elle düzenlenmedi, build_workflow.py ile yeniden üretildi.
+validate_workflow.py eskiden sadece "en az 2 deneme" kontrol ediyordu. Artık tam olarak 3 deneme ve 2000 ms bekleme şart. Kural sayısı 48'de kaldı.
+İki metin hatasını da düzelttim. maxTries: 3 toplam 3 deneme demek (ilk istek artı 2 yeniden deneme), ama iş akışındaki not kutusu "3 retries", doküman da "3 kez yeniden denenir" diyordu. İkisi de "toplam 3 deneme, 2 saniye arayla" olarak güncellendi.
+Dokümanla ilgili bir not: İstekte "backoff" denmişti, ama n8n'in yerleşik yeniden denemesi sabit aralıklı. Denemeler arası süre artmıyor, hep 2 saniye. akis-aciklama.md §4.3'te bunu açıkça yazdım ve süresi artan (üstel) bekleme gerekirse §7.2'deki yol haritasına yönlendirdim. README'deki CSV açıklamalarına da noktalı virgül bilgisini ekledim.
+
+3. Yeniden üretilen dosyalar
+
+Adım	Sonuç
+process_messages.py
+15 kayıt, talepler.json ve talepler.csv yazıldı
+generate_summary_html.py
+ozet.html 15 satırla üretildi
+validate_talepler.py
+JSON ve CSV doğrulaması geçti
+validate_workflow.py
+48 geçti, 0 başarısız; execution_report.txt UTF-8 olarak yenilendi
+Çalıştırma sırasında terminalde bir an görünen -1 çıkış kodları script hatası değil. Çıktıyı kısaltmak için kullandığım PowerShell komutundan kaynaklanıyordu. Kısaltmadan tekrar çalıştırınca iki script de 0 ile çıktı.
