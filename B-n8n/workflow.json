@@ -1,0 +1,1028 @@
+{
+  "name": "Laptop Price Monitor - Paginated Scrape, Diff & Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "0425288c-3f3c-52bf-9ca0-17f545ed4cbc",
+      "name": "Daily 09:00 Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e89377ed-f77d-581f-a667-2753e8a81720",
+              "name": "maxPages",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "d62e7490-ffc3-5064-b575-fecd532b9864",
+              "name": "requestDelaySeconds",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "5ed7560a-4702-5c75-9041-aff6fc109041",
+              "name": "priceAnomalyThresholdPct",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "eaa2d681-773b-5778-838e-3c41deb6ed24",
+              "name": "telegramChatId",
+              "value": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+              "type": "string"
+            },
+            {
+              "id": "f7df4cdf-2426-59c7-b1be-958c55047ca1",
+              "name": "googleSheetId",
+              "value": "REPLACE_WITH_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "fa8bae52-9221-52ad-b180-212ea539a39a",
+              "name": "historySheetName",
+              "value": "price_history",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c6ca0ef9-5438-57fe-bb36-bdc3040db00d",
+      "name": "Workflow Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $('Workflow Config').first().json;\n\nconst maxPages = Number(config.maxPages);\nif (!Number.isInteger(maxPages) || maxPages < 1) {\n  throw new Error(`Invalid maxPages in Workflow Config: ${config.maxPages}`);\n}\n\nreturn [\n  {\n    json: {\n      page: 1,\n      maxPages,\n      pagesFetched: 0,\n      runId: String($execution.id),\n      runStartedAt: $now.toISO(),\n      products: [],\n    },\n  },\n];\n"
+      },
+      "id": "e1cd666a-d1da-55e0-97aa-12aaed497c75",
+      "name": "Init Pagination State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f1af68d4-5657-5d12-874a-04237df0d077",
+      "name": "Pagination State",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://webscraper.io/test-sites/e-commerce/static/computers/laptops?page={{ $json.page }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (compatible; NuredermPriceMonitor/1.0; +https://webscraper.io/test-sites)"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "ae6114b3-9589-54f6-bede-3c564e4ec8f3",
+      "name": "Fetch Laptop Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f9e42888-d2e9-5dfc-a5af-cf0feb332ebc",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "36249c49-247b-5e1c-b9e8-40f3940cd6c9",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f97661df-75fd-504a-97ba-2d7585ed57e4",
+      "name": "HTTP Status OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const BASE_ORIGIN = 'https://webscraper.io';\n\nconst state = $('Pagination State').first().json;\nconst response = $input.first().json;\nconst html = String(response.data ?? response.body ?? '');\nconst page = Number(state.page);\n\nconst decodeEntities = (value) =>\n  String(value)\n    .replace(/&quot;/g, '\"')\n    .replace(/&#0?39;/g, \"'\")\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\nconst sanitizePrice = (raw) => {\n  const cleaned = String(raw ?? '')\n    .replace(/[^0-9.,-]/g, '')\n    .replace(/,/g, '');\n  const value = parseFloat(cleaned);\n  return Number.isFinite(value) ? Math.round(value * 100) / 100 : null;\n};\n\nconst toAbsoluteUrl = (href) => {\n  if (/^https?:\\/\\//i.test(href)) return href;\n  return `${BASE_ORIGIN}${href.startsWith('/') ? '' : '/'}${href}`;\n};\n\nconst readAttribute = (tag, attribute) => {\n  const match = tag.match(new RegExp(`\\\\b${attribute}=\"([^\"]*)\"`, 'i'));\n  return match ? decodeEntities(match[1]) : null;\n};\n\nconst blocks = html.split(/class=\"[^\"]*\\bthumbnail\\b[^\"]*\"/i).slice(1);\n\nconst pageProducts = [];\nconst invalidRows = [];\n\nfor (const block of blocks) {\n  const anchorTag = (block.match(/<a\\b[^>]*\\bclass=\"[^\"]*\\btitle\\b[^\"]*\"[^>]*>/i) || [])[0];\n  const anchorText = (block.match(/<a\\b[^>]*\\bclass=\"[^\"]*\\btitle\\b[^\"]*\"[^>]*>([\\s\\S]*?)<\\/a>/i) || [])[1];\n  const href = anchorTag ? readAttribute(anchorTag, 'href') : null;\n  const title = (anchorTag && readAttribute(anchorTag, 'title')) || (anchorText ? decodeEntities(anchorText) : null);\n\n  const rawPrice =\n    (block.match(/itemprop=\"price\"[^>]*>([^<]+)</i) || [])[1] ??\n    (block.match(/class=\"[^\"]*\\bprice\\b[^\"]*\"[^>]*>\\s*(?:<[^>]+>\\s*)*([^<]+)/i) || [])[1];\n  const price = sanitizePrice(rawPrice);\n\n  const rawReviews =\n    (block.match(/itemprop=\"reviewCount\"[^>]*>\\s*(\\d+)/i) || [])[1] ??\n    (block.match(/(\\d+)\\s+reviews?/i) || [])[1];\n  const reviewCount = rawReviews !== undefined ? parseInt(rawReviews, 10) : 0;\n\n  const rating = parseInt((block.match(/data-rating=\"(\\d+)\"/i) || [])[1] ?? '0', 10);\n  const descriptionRaw = (block.match(/class=\"[^\"]*\\bdescription\\b[^\"]*\"[^>]*>([\\s\\S]*?)<\\/p>/i) || [])[1];\n\n  if (!href || !title || price === null) {\n    invalidRows.push({ href, title, rawPrice: rawPrice ?? null });\n    continue;\n  }\n\n  const url = toAbsoluteUrl(href);\n  const productId = (url.match(/\\/product\\/(\\d+)/) || [])[1] ?? url;\n\n  pageProducts.push({\n    product_id: String(productId),\n    title,\n    description: descriptionRaw ? decodeEntities(descriptionRaw) : '',\n    price,\n    currency: 'USD',\n    review_count: reviewCount,\n    rating,\n    url,\n    page,\n  });\n}\n\nconst hasNextPage = /rel=\"next\"/i.test(html);\nconst pageNumbers = [...html.matchAll(/[?&]page=(\\d+)/g)].map((m) => parseInt(m[1], 10));\nconst totalPagesDetected = pageNumbers.length ? Math.max(page, ...pageNumbers) : page;\n\nconst merged = new Map((state.products || []).map((p) => [p.product_id, p]));\nfor (const product of pageProducts) {\n  if (!merged.has(product.product_id)) merged.set(product.product_id, product);\n}\n\nlet status = 'ok';\nlet reason = null;\nif (pageProducts.length === 0) {\n  status = 'error';\n  reason = `ZERO_PRODUCTS: page ${page} returned no parsable laptops (HTTP ${response.statusCode ?? 'n/a'}, ${html.length} bytes)`;\n} else if (invalidRows.length > 0) {\n  status = 'error';\n  reason = `PARSE_FAILURE: ${invalidRows.length} product card(s) on page ${page} missing title/link/price`;\n}\n\nreturn [\n  {\n    json: {\n      status,\n      reason,\n      page,\n      maxPages: state.maxPages,\n      pagesFetched: Number(state.pagesFetched || 0) + 1,\n      hasNextPage,\n      totalPagesDetected,\n      pageProductCount: pageProducts.length,\n      invalidRows,\n      statusCode: response.statusCode ?? null,\n      runId: state.runId,\n      runStartedAt: state.runStartedAt,\n      products: [...merged.values()],\n    },\n  },\n];\n"
+      },
+      "id": "a2381ea6-f74b-5ea7-8e4f-11e63aad9d4d",
+      "name": "Parse & Normalize Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9117e97a-2f52-59e6-bdf1-27cb76808ce0",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a86f9e05-07e2-5303-a766-93e3d84334a8",
+      "name": "Page Healthy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c6235b5b-886f-5b5a-af23-7cc592c2d341",
+              "leftValue": "={{ $json.hasNextPage }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "ca27c27d-c3f0-5b0b-b185-9d82d8834bc3",
+              "leftValue": "={{ $json.page }}",
+              "rightValue": "={{ $json.maxPages }}",
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "183bb149-30c7-59c0-a1f4-665b5a2548e2",
+      "name": "Has Next Page?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const current = $input.first().json;\n\nreturn [\n  {\n    json: {\n      page: current.page + 1,\n      maxPages: current.maxPages,\n      pagesFetched: current.pagesFetched,\n      runId: current.runId,\n      runStartedAt: current.runStartedAt,\n      products: current.products,\n    },\n  },\n];\n"
+      },
+      "id": "ae7aaab4-73df-5fb2-b1d0-4401031294e9",
+      "name": "Advance Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Workflow Config').first().json.requestDelaySeconds }}",
+        "unit": "seconds"
+      },
+      "id": "02baecf6-8318-54bd-ac72-14aa03e5ed56",
+      "name": "Polite Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        -20
+      ],
+      "webhookId": "8551f229-84c9-5d87-b45a-b1472be58f85"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\nconst scrapedAt = $now.toISO();\n\nconst products = (result.products || []).map((product) => ({\n  ...product,\n  run_id: result.runId,\n  scraped_at: scrapedAt,\n}));\n\nif (products.length === 0) {\n  throw new Error(`Run ${result.runId} finished pagination with zero products; refusing to persist an empty snapshot.`);\n}\n\nreturn [\n  {\n    json: {\n      runId: result.runId,\n      runStartedAt: result.runStartedAt,\n      scrapedAt,\n      pagesFetched: result.pagesFetched,\n      truncatedAtMaxPages: Boolean(result.hasNextPage) && result.page >= result.maxPages,\n      productCount: products.length,\n      products,\n    },\n  },\n];\n"
+      },
+      "id": "5717e30e-e78e-5e03-afa4-8f94963ed039",
+      "name": "Finalize Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.googleSheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.historySheetName }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "150753ac-dc2c-5175-b77d-86ddcf8cae4c",
+      "name": "Read Price History",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        220
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const snapshot = $('Finalize Snapshot').first().json;\nconst config = $('Workflow Config').first().json;\nconst anomalyThresholdPct = Number(config.priceAnomalyThresholdPct ?? 20);\n\nconst round2 = (value) => Math.round(value * 100) / 100;\n\nconst toNumber = (value) => {\n  if (typeof value === 'number') return Number.isFinite(value) ? value : null;\n  const parsed = parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));\n  return Number.isFinite(parsed) ? parsed : null;\n};\n\nconst latestById = new Map();\nfor (const item of $input.all()) {\n  const row = item.json || {};\n  const productId = String(row.product_id ?? '').trim();\n  const price = toNumber(row.price);\n  if (!productId || price === null) continue;\n\n  const timestamp = Date.parse(row.scraped_at) || 0;\n  const previous = latestById.get(productId);\n  if (!previous || timestamp >= previous.timestamp) {\n    latestById.set(productId, { price, timestamp });\n  }\n}\n\nconst isBaselineRun = latestById.size === 0;\n\nreturn snapshot.products.map((product) => {\n  const previous = latestById.get(String(product.product_id));\n\n  let changeType = 'UNCHANGED';\n  let previousPrice = null;\n  let priceDelta = 0;\n  let priceDeltaPct = 0;\n\n  if (!previous) {\n    changeType = 'NEW';\n  } else {\n    previousPrice = previous.price;\n    priceDelta = round2(product.price - previous.price);\n    if (Math.abs(priceDelta) >= 0.01) {\n      changeType = priceDelta > 0 ? 'PRICE_UP' : 'PRICE_DOWN';\n      priceDeltaPct = previous.price > 0 ? round2((priceDelta / previous.price) * 100) : 0;\n    } else {\n      priceDelta = 0;\n    }\n  }\n\n  const isAnomaly = changeType.startsWith('PRICE_') && Math.abs(priceDeltaPct) >= anomalyThresholdPct;\n\n  return {\n    json: {\n      run_id: product.run_id,\n      scraped_at: product.scraped_at,\n      product_id: product.product_id,\n      title: product.title,\n      price: product.price,\n      currency: product.currency,\n      review_count: product.review_count,\n      rating: product.rating,\n      url: product.url,\n      page: product.page,\n      change_type: changeType,\n      previous_price: previousPrice,\n      price_delta: priceDelta,\n      price_delta_pct: priceDeltaPct,\n      is_anomaly: isAnomaly,\n      is_baseline_run: isBaselineRun,\n    },\n  };\n});\n"
+      },
+      "id": "a7a1ddc0-1fd5-5c12-9f10-5a8bdc65f3c9",
+      "name": "Detect Price Changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.googleSheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Workflow Config').first().json.historySheetName }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scraped_at",
+              "displayName": "scraped_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review_count",
+              "displayName": "review_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "page",
+              "displayName": "page",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "change_type",
+              "displayName": "change_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "previous_price",
+              "displayName": "previous_price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price_delta",
+              "displayName": "price_delta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price_delta_pct",
+              "displayName": "price_delta_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_anomaly",
+              "displayName": "is_anomaly",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_baseline_run",
+              "displayName": "is_baseline_run",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8bb9ec34-fc20-5b43-aaf1-eea0be40f471",
+      "name": "Append Snapshot to History",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2660,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5e959ba1-90e1-5ff4-b0db-a2579fdee604",
+              "leftValue": "={{ $json.change_type }}",
+              "rightValue": "UNCHANGED",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "1786d69c-0a11-5087-a883-b4500ec21dc6",
+              "leftValue": "={{ $json.is_baseline_run }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0fca3402-04f2-50fc-aaac-5dbff0caa201",
+      "name": "Only Changed or New",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2660,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_LINES_PER_SECTION = 25;\nconst snapshot = $('Finalize Snapshot').first().json;\nconst changes = $input.all().map((item) => item.json);\n\nconst escapeMarkdown = (value) => String(value ?? '').replace(/([_*`\\[])/g, '\\\\$1');\nconst money = (value) => `$${Number(value).toFixed(2)}`;\nconst signedPct = (value) => `${value > 0 ? '+' : ''}${Number(value).toFixed(2)}%`;\n\nconst describe = (row) => {\n  const title = `[${escapeMarkdown(row.title)}](${row.url})`;\n  if (row.change_type === 'NEW') {\n    return `- ${title}: ${money(row.price)} (new listing)`;\n  }\n  return `- ${title}: ${money(row.previous_price)} -> *${money(row.price)}* (${signedPct(row.price_delta_pct)})`;\n};\n\nconst section = (heading, rows) => {\n  if (rows.length === 0) return [];\n  const lines = rows.slice(0, MAX_LINES_PER_SECTION).map(describe);\n  if (rows.length > MAX_LINES_PER_SECTION) {\n    lines.push(`_...and ${rows.length - MAX_LINES_PER_SECTION} more_`);\n  }\n  return ['', `*${heading} (${rows.length})*`, ...lines];\n};\n\nconst byMagnitude = (a, b) => Math.abs(b.price_delta_pct) - Math.abs(a.price_delta_pct);\nconst anomalies = changes.filter((r) => r.is_anomaly).sort(byMagnitude);\nconst priceDown = changes.filter((r) => r.change_type === 'PRICE_DOWN' && !r.is_anomaly).sort(byMagnitude);\nconst priceUp = changes.filter((r) => r.change_type === 'PRICE_UP' && !r.is_anomaly).sort(byMagnitude);\nconst newListings = changes.filter((r) => r.change_type === 'NEW');\n\nconst lines = [\n  '*Laptop Price Monitor - Change Report*',\n  `Run: \\`${escapeMarkdown(snapshot.runId)}\\` | ${escapeMarkdown(snapshot.scrapedAt)}`,\n  `Scanned: ${snapshot.productCount} products across ${snapshot.pagesFetched} pages | Changes: ${changes.length}`,\n  ...section('ANOMALY - price moved beyond threshold', anomalies),\n  ...section('Price drops', priceDown),\n  ...section('Price increases', priceUp),\n  ...section('New listings', newListings),\n];\n\nif (snapshot.truncatedAtMaxPages) {\n  lines.push('', '_Warning: pagination stopped at the maxPages safety bound; results may be incomplete._');\n}\n\nreturn [\n  {\n    json: {\n      text: lines.join('\\n').slice(0, 4000),\n      changeCount: changes.length,\n      anomalyCount: anomalies.length,\n    },\n  },\n];\n"
+      },
+      "id": "89b77894-ee6c-5222-9c87-409be567bf5d",
+      "name": "Build Alert Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Workflow Config').first().json.telegramChatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "899ada80-36f4-55b2-8eef-08e6f3490bff",
+      "name": "Send Price Change Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3100,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst state = $('Pagination State').first().json;\n\nlet stage;\nlet detail;\n\nif (input.error !== undefined) {\n  stage = 'HTTP_TRANSPORT';\n  detail = typeof input.error === 'string' ? input.error : input.error.message ?? JSON.stringify(input.error);\n} else if (input.status === 'error') {\n  stage = 'EXTRACTION';\n  detail = input.reason;\n} else {\n  stage = 'HTTP_STATUS';\n  detail = `Unexpected HTTP ${input.statusCode ?? 'n/a'} ${input.statusMessage ?? ''}`.trim();\n}\n\nconst page = input.page ?? state.page ?? 'n/a';\nconst pagesFetched = input.pagesFetched ?? state.pagesFetched ?? 0;\nconst runId = input.runId ?? state.runId ?? String($execution.id);\nconst failedUrl = `https://webscraper.io/test-sites/e-commerce/static/computers/laptops?page=${page}`;\n\nconst escapeMarkdown = (value) => String(value ?? '').replace(/([_*`\\[])/g, '\\\\$1');\n\nconst text = [\n  '*Laptop Price Monitor - RUN ABORTED*',\n  `Stage: \\`${stage}\\``,\n  `Page: ${page} | Pages completed before failure: ${pagesFetched}`,\n  `URL: ${failedUrl}`,\n  `Detail: ${escapeMarkdown(detail)}`,\n  `Run: \\`${escapeMarkdown(runId)}\\` | ${escapeMarkdown($now.toISO())}`,\n  '_No snapshot was persisted for this run._',\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      stage,\n      detail,\n      page,\n      runId,\n      failedUrl,\n      text,\n      summary: `Laptop price scrape aborted at stage ${stage} (page ${page}): ${detail}`,\n    },\n  },\n];\n"
+      },
+      "id": "788c8c22-8c2e-5f13-8b3c-cb182617704b",
+      "name": "Build Failure Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Workflow Config').first().json.telegramChatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "058d6b56-007e-5557-8533-8c393f947776",
+      "name": "Send Failure Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        560
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $('Build Failure Payload').first().json.summary }}"
+      },
+      "id": "3846dcda-a25d-5d0a-9ba0-3c4345aedf3b",
+      "name": "Abort Execution",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        560
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f2780ed1-8a01-5aff-806d-e40c30da60f6",
+      "name": "On Unhandled Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const event = $input.first().json;\nconst execution = event.execution || {};\nconst lastNode = execution.lastNodeExecuted ?? event.trigger?.error?.node?.name ?? 'unknown';\n\n// The controlled failure branch already alerted before \"Abort Execution\" raised the error.\nif (lastNode === 'Abort Execution') {\n  return [];\n}\n\nconst escapeMarkdown = (value) => String(value ?? '').replace(/([_*`\\[])/g, '\\\\$1');\nconst message = execution.error?.message ?? event.trigger?.error?.message ?? 'Unknown error';\n\nconst text = [\n  '*Laptop Price Monitor - UNHANDLED FAILURE*',\n  `Workflow: ${escapeMarkdown(event.workflow?.name ?? 'n/a')}`,\n  `Failed node: \\`${escapeMarkdown(lastNode)}\\``,\n  `Error: ${escapeMarkdown(message)}`,\n  `Execution: ${execution.url ?? execution.id ?? 'n/a'}`,\n  `Mode: ${escapeMarkdown(execution.mode ?? 'n/a')}`,\n].join('\\n');\n\nreturn [{ json: { text, lastNode, message } }];\n"
+      },
+      "id": "fb221533-4113-5b85-b1a6-f830f8eb5128",
+      "name": "Format Unhandled Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "REPLACE_WITH_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "0dbcbf4e-e489-5d8e-87fb-97517b19f865",
+      "name": "Send Critical Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Laptop Price Monitor\nBaseline template: **Competitor price monitoring with web scraping, Google Sheets & Telegram** (n8n.io/workflows/4640).\n\nDaily 09:00 (Europe/Istanbul) scrape of every `?page=N` of the webscraper.io laptop catalogue, USD price strings sanitised to floats, snapshot appended to Google Sheets with an ISO timestamp, diff against the latest stored price per product and a Telegram Markdown alert for changes.\n\n**Setup:** edit *Workflow Config* (chat ID, sheet ID), attach Google Sheets + Telegram credentials, create sheet `price_history` with the header row listed in akis-aciklama.md, then set *Settings > Error Workflow* to this workflow.",
+        "height": 400,
+        "width": 620,
+        "color": 7
+      },
+      "id": "1f1f1546-425d-58de-a55d-7958c3b2dbed",
+      "name": "Note: Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Pagination loop\nState (page, accumulated products) flows Pagination State -> Fetch -> Parse -> Has Next Page? -> Advance Page -> Polite Delay -> back to Pagination State. Exit when the page has no `rel=\"next\"` link or the `maxPages` safety bound is hit.",
+        "height": 120,
+        "width": 1780,
+        "color": 5
+      },
+      "id": "b98815db-69bf-5d51-aba4-e084481b8584",
+      "name": "Note: Pagination Loop",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Controlled failure branch\nTransport errors (after 3 retries), non-2xx status codes, zero products on a page or unparsable price cards all land here: alert is sent, then *Abort Execution* fails the run so nothing is persisted.",
+        "height": 140,
+        "width": 720,
+        "color": 3
+      },
+      "id": "ebc2c1a4-1c52-579d-9fe3-30cb92fbb7b7",
+      "name": "Note: Failure Branch",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Global safety net\nCatches anything outside the controlled branch (Sheets/Telegram outages, code exceptions). Skips errors raised by *Abort Execution* to avoid duplicate alerts.",
+        "height": 120,
+        "width": 620,
+        "color": 3
+      },
+      "id": "9a7a8761-9114-507e-b3d8-2987c52b8ad0",
+      "name": "Note: Error Trigger",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        1020
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 09:00 Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Init Pagination State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Pagination State": {
+      "main": [
+        [
+          {
+            "node": "Pagination State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagination State": {
+      "main": [
+        [
+          {
+            "node": "Fetch Laptop Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Laptop Page": {
+      "main": [
+        [
+          {
+            "node": "HTTP Status OK?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Status OK?": {
+      "main": [
+        [
+          {
+            "node": "Parse & Normalize Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Normalize Page": {
+      "main": [
+        [
+          {
+            "node": "Page Healthy?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page Healthy?": {
+      "main": [
+        [
+          {
+            "node": "Has Next Page?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failure Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Next Page?": {
+      "main": [
+        [
+          {
+            "node": "Advance Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Advance Page": {
+      "main": [
+        [
+          {
+            "node": "Polite Delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Polite Delay": {
+      "main": [
+        [
+          {
+            "node": "Pagination State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Read Price History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Price History": {
+      "main": [
+        [
+          {
+            "node": "Detect Price Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Price Changes": {
+      "main": [
+        [
+          {
+            "node": "Append Snapshot to History",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Only Changed or New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only Changed or New": {
+      "main": [
+        [
+          {
+            "node": "Build Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alert Message": {
+      "main": [
+        [
+          {
+            "node": "Send Price Change Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failure Payload": {
+      "main": [
+        [
+          {
+            "node": "Send Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Failure Alert": {
+      "main": [
+        [
+          {
+            "node": "Abort Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On Unhandled Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Format Unhandled Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Unhandled Error": {
+      "main": [
+        [
+          {
+            "node": "Send Critical Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "versionId": "9030429c-c297-5e3c-9924-811b6fce934f",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

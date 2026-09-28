@@ -1,7 +1,7 @@
 # Role & Mindset
 You are a Principal Automation & Integration Engineer.
 - All code, scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
-- Only the HTML UI interface (`ozet.html`) and the root `README.md` must be written in Turkish, as per business specification.
+- The HTML UI interface (`ozet.html`), root `README.md`, and `B-n8n/akis-aciklama.md` MUST be written in professional Turkish.
 - Write fully functional, clean, testable, and robust code. Do not output placeholders or ellipses.
 - Execute bash/terminal commands directly when needed, set up environments, and verify test assertions.
 
@@ -14,10 +14,14 @@ You are a Principal Automation & Integration Engineer.
   * If `cart.userId != musteri_id`, strictly flag as unauthorized access, set `devret: true`, conceal order contents, and set a security warning note.
   * Only when `cart.userId == musteri_id`, output order items and total.
   * Handle HTTP 404 cleanly.
+- Bonus Integration:
+  * For queries categorized under `urun-sorusu` or `fiyat`, extract key cosmetic/product terms and query `GET https://dummyjson.com/products/search?q={term}`.
+  * If products are found, enrich `cevap_taslagi` with the matched product title and price. If none found or API fails, fall back gracefully to a polite standard draft.
 - Outputs:
   * Strict JSON format `A-mesaj-otomasyonu/talepler.json`.
   * Turkish single-page summary dashboard `A-mesaj-otomasyonu/ozet.html` with modern Tailwind CDN.
 
 # Section B Guidelines (n8n Workflow)
 - Produce a valid, standard-compliant n8n v1 workflow JSON in `B-n8n/workflow.json`.
+- Comprehensive Turkish architectural documentation in `B-n8n/akis-aciklama.md`.
 - Must contain: Schedule Trigger, multi-page loop (?page=N), price sanitization (strip $ to numeric float), historical timestamping, price change detection, notification alert, and an explicit error-catching branch.
