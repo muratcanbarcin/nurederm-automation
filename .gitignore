@@ -26,6 +26,16 @@ service-account*.json
 client_secret*.json
 token.json
 
+# Local temporary files and logs
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+tmp/
+temp/
+
 # OS metadata
 .DS_Store
 Thumbs.db

@@ -289,3 +289,19 @@ Sayfa kazıma işini yapan *Fetch Laptop Page* (HTTP Request) node'u, geçici a�
 ### 5.3 AI orkestrasyon kayıtları
 
 Yapay zekâ destekli geliştirme sürecinin metodolojisi, faz bazlı kararları ve ham prompt kayıtları [`promptlar/A-claude-code.md`](promptlar/A-claude-code.md) ve [`promptlar/B-n8n.md`](promptlar/B-n8n.md) dosyalarında belgelenmiştir.
+
+
+## Gelecek Yol Haritası ve Üretim Ortamı Önerileri (Roadmap)
+
+Sistem kısıtlı süre ve test ortamı şartlarına uygun olarak deterministik, güvenli ve hafif bir mimariyle kurgulanmıştır. Canlı kurumsal operasyonda (production) şu adımların devreye alınması planlanmaktadır:
+
+1. **Akıllı Destek & Kurumsal RAG Entegrasyonu (Bölüm A):**
+   - Müşteri mesajlarının yanıtlanmasında, ürün içerik kütüphanesi (etken maddeler, kullanım talimatları) ve şirket politikalarıyla beslenen kurumsal bir RAG (Retrieval-Augmented Generation) mimarisi konumlandırılabilir.
+   - Tıbbi güvenlik bariyeri (guardrail) birincil öncelik olarak korunarak; `istenmeyen-etki` vakalarında sistemin hiçbir koşulda tanı veya tıbbi öneri üretmemesi LLM seviyesinde deterministik prompt denetimleri ve semantik filtrelerle garanti altına alınabilir.
+
+2. **Gerçek Zamanlı Kanallar ve Mesaj Kuyrukları (Bölüm A):**
+   - WhatsApp Cloud API ve Instagram Graph API doğrudan webhook düğümleriyle sisteme bağlanabilir.
+   - Ani mesaj yoğunluklarını (kampanya dönemleri vb.) yönetmek ve operasyonel dayanıklılık sağlamak adına araya Redis / RabbitMQ tabanlı bir mesaj kuyruk mekanizması eklenebilir.
+
+3. **Kullanıcı Yetkilendirme ve Çoklu Temsilci Yönetimi:**
+   - Operasyon paneline (dashboard) rol bazlı erişim kontrolü (RBAC) ve kurumsal SSO/OAuth (Google Workspace, Active Directory) entegrasyonu sağlanarak müşteri verilerine erişim hassas biçimde sınırlandırılabilir.
