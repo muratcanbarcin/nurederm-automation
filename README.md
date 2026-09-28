@@ -8,8 +8,8 @@ Nurederm için hazırlanan bu depo iki bağımsız otomasyon çözümü içerir:
 | Başlık | Değer |
 | --- | --- |
 | Başlangıç | 28 Eylül 2026, 14:00 |
-| Bitiş | 28 Eylül 2026, 16:45 |
-| Toplam süre | ~2 saat 45 dakika |
+| Bitiş | 28 Eylül 2026, 16:30 |
+| Toplam süre | ~2 saat 30 dakika |
 | Dil / çalışma ortamı | Python 3.11+ (geliştirmede 3.13), Node.js 18+ (yalnızca doğrulama için), n8n v1 |
 | Doğrulama durumu | `validate_talepler.py` 15/15 kayıt · `validate_workflow.py` 48/48 kural |
 
