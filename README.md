@@ -27,6 +27,7 @@ nurederm-automation/
 │   ├── mesajlar.json                # Girdi: 15 müşteri mesajı
 │   ├── process_messages.py          # Sınıflandırma, IDOR kontrolü, ürün araması, taslak üretimi
 │   ├── talepler.json                # Çıktı: katı şemalı talep kayıtları
+│   ├── talepler.csv                 # Çıktı: Excel uyumlu (UTF-8 BOM) CSV dışa aktarımı
 │   ├── generate_summary_html.py     # talepler.json -> ozet.html dönüştürücüsü
 │   ├── ozet.html                    # Türkçe yönetici panosu (Tailwind CDN)
 │   └── validate_talepler.py         # Şema ve iş kuralı doğrulayıcısı + yönetici özeti
@@ -73,7 +74,17 @@ Diğer davranışlar:
 - **Dil tespiti:** İngilizce yazan müşteriye (mesaj #6) İngilizce yanıt taslağı üretilir.
 - **Spam:** Şüpheli link veya takipçi satışı içeren mesajlar (mesaj #7) için "yanıt gönderilmemelidir" taslağı üretilir.
 
-`talepler.json` her kayıt için tam olarak şu alanları içerir: `id`, `konu`, `devret`, `cevap_taslagi`, `not`.
+`talepler.json` her kayıt için tam olarak şu alanları içerir: `id`, `konu`, `oncelik`, `devret`, `cevap_taslagi`, `not`.
+
+**Operasyonel öncelik (`oncelik`):** Her kayda deterministik bir öncelik atanır. Kategori bir taban değer belirler; sipariş sorgusunun sonucu bu değeri yalnızca yükseltebilir.
+
+| Öncelik | Koşul | Örnek |
+| --- | --- | --- |
+| `YUKSEK` | `istenmeyen-etki` (hasta güvenliği) veya IDOR / müşteri uyuşmazlığı | #1, #4 |
+| `ORTA` | `iade-sikayet`, bulunamayan (HTTP 404) veya API hatası nedeniyle doğrulanamayan sipariş | #3, #5 |
+| `DUSUK` | Rutin talepler: `urun-sorusu`, `fiyat`, `diger`, sahipliği doğrulanmış sipariş, sipariş numarası içermeyen sipariş sorusu | Diğerleri |
+
+**CSV dışa aktarımı:** Aynı kayıtlar `mesajlar.json` ile birleştirilerek `talepler.csv` dosyasına yazılır. Sütunlar: `id`, `kanal`, `musteri_id`, `konu`, `oncelik`, `devret`, `cevap_taslagi`, `not`. Dosya UTF-8 BOM ile kodlanır; böylece Excel Türkçe karakterleri doğru gösterir. `validate_talepler.py`, CSV'nin BOM'unu, başlığını ve `talepler.json` ile satır satır tutarlılığını da doğrular. `oncelik` alanı içermeyen eski `talepler.json` dosyaları geriye dönük uyumluluk için hâlâ geçerli kabul edilir.
 
 ### 2.3 Güvenlik ve IDOR koruması
 
@@ -124,10 +135,11 @@ Eşleşme bulunursa ürün adı ve güncel fiyatı yanıt taslağına eklenir. M
 
 `generate_summary_html.py` tarafından `talepler.json` ve `mesajlar.json` verilerinden üretilen, tek sayfalık, Tailwind CDN tabanlı Türkçe panodur. İçeriği:
 
-- **Metrik kartları:** İşlenen Toplam Mesaj, İnsana Devredilen Talepler ("Aksiyon Gerekli" rozeti ve yüzde oranı), Güvenlik İhlali / Engellenen IDOR (ihlal ayrıntısıyla birlikte).
+- **Metrik kartları:** İşlenen Toplam Mesaj, İnsana Devredilen Talepler ("Aksiyon Gerekli" rozeti ve yüzde oranı), Yüksek Öncelikli Vakalar (sayı ve vaka listesi), Güvenlik İhlali / Engellenen IDOR (ihlal ayrıntısıyla birlikte).
 - **Kategori dağılımı:** Altı kategori için dinamik sayaç kartları.
 - **Filtreler:** "Tümü", "İnsana Devredilenler", "Doğrudan Yanıtlananlar". Filtreye uyan kayıt yoksa boş durum mesajı gösterilir.
-- **Talep tablosu:** Kanal ve kategori rozetleri, devir durumu, yanıt taslağı ve dahili not. İngilizce güvenlik notları panoda Türkçe gösterilir; IDOR kaydı "Güvenlik İhlali" rozetiyle öne çıkarılır.
+- **CSV Olarak İndir:** O anda görünen (filtrelenmiş) satırları, `talepler.csv` ile aynı sütun yapısında ve UTF-8 BOM ile tamamen tarayıcı tarafında indirir. Dosya adı aktif filtreyi yansıtır (ör. `talepler-insana-devredilenler.csv`).
+- **Talep tablosu:** Kanal, kategori ve renk kodlu öncelik rozetleri (kırmızı YÜKSEK, amber ORTA, yeşil DÜŞÜK), devir durumu, yanıt taslağı ve dahili not. İngilizce güvenlik notları panoda Türkçe gösterilir; IDOR kaydı "Güvenlik İhlali" rozetiyle öne çıkarılır.
 
 Tüm sayılar veriden hesaplanır; panoda sabit değer bulunmaz. Kullanıcı kaynaklı metinler HTML kaçışından geçirilir.
 

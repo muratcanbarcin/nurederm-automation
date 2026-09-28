@@ -1,0 +1,92 @@
+Validating C:\Users\MCB\Desktop\nurederm-automation\B-n8n\workflow.json
+  [PASS] workflow.json is valid JSON
+
+Structure
+  [PASS] workflow has a name
+  [PASS] settings.executionOrder is v1
+  [PASS] every node defines id, name, type, typeVersion, position, parameters
+  [PASS] node names are unique
+  [PASS] node ids are unique
+  [PASS] all connections reference existing nodes
+
+Mandatory nodes
+  [PASS] Schedule Trigger present (n8n-nodes-base.scheduleTrigger)
+  [PASS] HTTP Request present (n8n-nodes-base.httpRequest)
+  [PASS] Code (extraction / normalization) present (n8n-nodes-base.code)
+  [PASS] IF (stop condition / validation) present (n8n-nodes-base.if)
+  [PASS] Google Sheets (persistence) present (n8n-nodes-base.googleSheets)
+  [PASS] Filter (change detection) present (n8n-nodes-base.filter)
+  [PASS] Telegram (notification) present (n8n-nodes-base.telegram)
+  [PASS] Stop and Error (abort) present (n8n-nodes-base.stopAndError)
+  [PASS] Error Trigger (global safety net) present (n8n-nodes-base.errorTrigger)
+  [PASS] every functional node is reachable from a trigger
+
+Schedule
+  [PASS] cron expression is '0 9 * * *'
+  [PASS] timezone pinned to Europe/Istanbul
+
+Pagination
+  [PASS] HTTP URL paginates with ?page={{ $json.page }}
+  [PASS] pagination loop cycles back to the HTTP node
+  [PASS] loop exit (Has Next Page? = false) proceeds to Finalize Snapshot
+  [PASS] stop condition uses rel="next" detection plus maxPages bound
+  [PASS] price sanitization strips currency and parses float
+
+Error handling
+  [PASS] HTTP node routes transport errors to an error output
+  [PASS] HTTP node retries before failing
+  [PASS] HTTP node exposes statusCode for 4xx/5xx evaluation
+  [PASS] HTTP transport error routes to Build Failure Payload
+  [PASS] non-2xx status routes to Build Failure Payload
+  [PASS] zero products / parse failure routes to Build Failure Payload
+  [PASS] failure branch alerts then aborts
+  [PASS] abort still runs if the failure alert itself fails
+  [PASS] Error Trigger sends a critical alert
+
+Persistence and change detection
+  [PASS] history sheet uses append operation
+  [PASS] history schema holds timestamp/price/diff columns
+  [PASS] snapshot rows are stamped with $now ISO timestamp
+  [PASS] history read tolerates an empty sheet (alwaysOutputData)
+  [PASS] read -> diff -> filter -> alert chain is wired
+  [PASS] price alert is sent as Markdown
+
+Code node syntax (node --check)
+  [PASS] Init Pagination State
+  [PASS] Parse & Normalize Page
+  [PASS] Advance Page
+  [PASS] Finalize Snapshot
+  [PASS] Detect Price Changes
+  [PASS] Build Alert Message
+  [PASS] Build Failure Payload
+  [PASS] Format Unhandled Error
+
+Live end-to-end simulation (tests/simulate_pipeline.js)
+    Pagination finished at page 20 (detected 20), 117 unique products
+    Sample product: {"product_id":"31","title":"Packard 255 G2","description":"15.6\", AMD E2-3800 1.3GHz, 4GB, 500GB, Windows 8.1","price":416.99,"currency":"USD","review_count":2,"rating":2,"url":"https://webscraper.io/test-sites/e-commerce/static/product/31","page":1,"run_id":"sim-1001","scraped_at":"2026-09-28T12:45:27.103Z"}
+    
+    Alert message (3 changes, 2 anomalies):
+    *Laptop Price Monitor - Change Report*
+    Run: `sim-1001` | 2026-09-28T12:45:27.103Z
+    Scanned: 117 products across 20 pages | Changes: 3
+    
+    *ANOMALY - price moved beyond threshold (2)*
+    - [Packard 255 G2](https://webscraper.io/test-sites/e-commerce/static/product/31): $1.00 -> *$416.99* (+41599.00%)
+    - [Aspire E1-510](https://webscraper.io/test-sites/e-commerce/static/product/32): $406.99 -> *$306.99* (-24.57%)
+    
+    *Price increases (1)*
+    - [ThinkPad T540p](https://webscraper.io/test-sites/e-commerce/static/product/33): $1177.99 -> *$1178.99* (+0.08%)
+    
+    Failure alert:
+    *Laptop Price Monitor - RUN ABORTED*
+    Stage: `EXTRACTION`
+    Page: 99 | Pages completed before failure: 5
+    URL: https://webscraper.io/test-sites/e-commerce/static/computers/laptops?page=99
+    Detail: ZERO\_PRODUCTS: page 99 returned no parsable laptops (HTTP 200, 30355 bytes)
+    Run: `sim-1001` | 2026-09-28T12:45:27.294Z
+    _No snapshot was persisted for this run._
+    
+    SIMULATION PASSED
+  [PASS] code nodes scrape, sanitize, diff and alert correctly against the live site
+
+48 passed, 0 failed

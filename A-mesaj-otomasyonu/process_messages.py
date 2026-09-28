@@ -3,17 +3,19 @@
 Loads inbound customer messages, classifies each one into a support category,
 enforces medical/legal handoff rules, verifies order ownership against the
 DummyJSON carts API (IDOR protection), enriches product/price replies from the
-DummyJSON product search API and writes draft replies to talepler.json.
+DummyJSON product search API, assigns an operational priority and writes draft
+replies to talepler.json and talepler.csv.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import logging
 import re
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,10 @@ from urllib3.util.retry import Retry
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_PATH = BASE_DIR / "mesajlar.json"
 OUTPUT_PATH = BASE_DIR / "talepler.json"
+CSV_PATH = BASE_DIR / "talepler.csv"
+CSV_COLUMNS: tuple[str, ...] = (
+    "id", "kanal", "musteri_id", "konu", "oncelik", "devret", "cevap_taslagi", "not",
+)
 
 CARTS_API_URL = "https://dummyjson.com/carts/{order_id}"
 PRODUCT_SEARCH_API_URL = "https://dummyjson.com/products/search"
@@ -50,6 +56,31 @@ HANDOFF_CATEGORIES: frozenset[Category] = frozenset(
 )
 
 
+class Priority(str, Enum):
+    HIGH = "YUKSEK"
+    MEDIUM = "ORTA"
+    LOW = "DUSUK"
+
+
+PRIORITY_RANK: dict[Priority, int] = {Priority.LOW: 0, Priority.MEDIUM: 1, Priority.HIGH: 2}
+
+# Category baseline; order-status outcomes (IDOR mismatch, unverified order) can escalate it.
+CATEGORY_PRIORITY: dict[Category, Priority] = {
+    Category.ADVERSE_EFFECT: Priority.HIGH,
+    Category.RETURN_COMPLAINT: Priority.MEDIUM,
+    Category.ORDER_STATUS: Priority.LOW,
+    Category.PRICE: Priority.LOW,
+    Category.PRODUCT_QUESTION: Priority.LOW,
+    Category.OTHER: Priority.LOW,
+}
+
+
+def resolve_priority(category: Category, outcome: Priority) -> Priority:
+    """Return the higher of the category baseline and the draft outcome priority."""
+    baseline = CATEGORY_PRIORITY[category]
+    return outcome if PRIORITY_RANK[outcome] > PRIORITY_RANK[baseline] else baseline
+
+
 class InboundMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -64,6 +95,7 @@ class TicketResult(BaseModel):
 
     id: int
     konu: Category
+    oncelik: Priority
     devret: bool
     cevap_taslagi: str
     note: str = Field(alias="not")
@@ -412,6 +444,7 @@ class Draft:
     reply: str
     note: str
     covered_intents: frozenset[Category] = frozenset()
+    priority: Priority = Priority.LOW
 
 
 def _format_money(amount: float) -> str:
@@ -460,7 +493,9 @@ def draft_order_status(
             "numaranızı kontrol edip tekrar paylaşabilir misiniz? Yardımcı olmaktan "
             "memnuniyet duyarız."
         )
-        return Draft(False, reply, f"Order {order_id} not found (HTTP 404).")
+        return Draft(
+            False, reply, f"Order {order_id} not found (HTTP 404).", priority=Priority.MEDIUM
+        )
 
     if lookup.status is LookupStatus.ERROR or lookup.cart is None:
         reply = (
@@ -474,6 +509,7 @@ def draft_order_status(
             True,
             reply,
             f"Order lookup for {order_id} failed ({lookup.error}); manual check required.",
+            priority=Priority.MEDIUM,
         )
 
     cart_owner = lookup.cart.get("userId")
@@ -493,7 +529,7 @@ def draft_order_status(
             f"{message.musteri_id} requested order {order_id}, which belongs to user "
             f"{cart_owner}. Order contents concealed; identity verification required."
         )
-        return Draft(True, reply, note)
+        return Draft(True, reply, note, priority=Priority.HIGH)
 
     summary = _cart_summary(lookup.cart, lang)
     reply = (
@@ -645,7 +681,7 @@ def _append_secondary_intents(
         if draft.note.startswith(SECURITY_NOTE_PREFIX) or secondary in draft.covered_intents
         else f"{draft.reply}\n{SECONDARY_INTENT_REPLIES[secondary][lang]}"
     )
-    return Draft(draft.devret, reply, f"{draft.note} Secondary intent: {secondary.value}.")
+    return replace(draft, reply=reply, note=f"{draft.note} Secondary intent: {secondary.value}.")
 
 
 def process_message(
@@ -677,6 +713,7 @@ def process_message(
     return TicketResult(
         id=message.id,
         konu=category,
+        oncelik=resolve_priority(category, draft.priority),
         devret=devret,
         cevap_taslagi=draft.reply,
         note=draft.note,
@@ -699,11 +736,40 @@ def write_results(path: Path, results: list[TicketResult]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def export_csv(
+    path: Path, results: list[TicketResult], messages: list[InboundMessage]
+) -> None:
+    """Write tickets joined with their source channel/customer as UTF-8 BOM CSV for Excel."""
+    messages_by_id = {message.id: message for message in messages}
+    missing = [result.id for result in results if result.id not in messages_by_id]
+    if missing:
+        raise ValueError(f"Tickets without a source message: {missing}")
+
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.writer(handle, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(CSV_COLUMNS)
+        for result in results:
+            message = messages_by_id[result.id]
+            writer.writerow(
+                (
+                    result.id,
+                    message.kanal,
+                    message.musteri_id,
+                    result.konu.value,
+                    result.oncelik.value,
+                    "true" if result.devret else "false",
+                    result.cevap_taslagi,
+                    result.note,
+                )
+            )
+
+
 def run(
     input_path: Path = INPUT_PATH,
     output_path: Path = OUTPUT_PATH,
     fetch_cart: CartFetcher | None = None,
     search_products: ProductSearcher | None = None,
+    csv_path: Path | None = CSV_PATH,
 ) -> list[TicketResult]:
     messages = load_messages(input_path)
     logger.info("Loaded %d messages from %s", len(messages), input_path.name)
@@ -716,6 +782,9 @@ def run(
     results = [process_message(message, fetch_cart, search_products) for message in messages]
     write_results(output_path, results)
     logger.info("Wrote %d tickets to %s", len(results), output_path.name)
+    if csv_path is not None:
+        export_csv(csv_path, results, messages)
+        logger.info("Exported %d tickets to %s", len(results), csv_path.name)
     return results
 
 
@@ -729,9 +798,10 @@ def main() -> int:
 
     for result in results:
         logger.info(
-            "id=%-2d konu=%-15s devret=%-5s %s",
+            "id=%-2d konu=%-15s oncelik=%-6s devret=%-5s %s",
             result.id,
             result.konu.value,
+            result.oncelik.value,
             result.devret,
             "[SECURITY]" if result.note.startswith(SECURITY_NOTE_PREFIX) else "",
         )

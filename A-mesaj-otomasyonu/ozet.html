@@ -17,14 +17,14 @@
         <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Müşteri Talepleri Yönetici Özeti</h1>
         <p class="mt-1 text-sm text-slate-500">WhatsApp ve Instagram kanallarından gelen mesajların otomatik sınıflandırma ve yanıt taslağı raporu.</p>
       </div>
-      <p class="text-xs text-slate-500">Oluşturulma: <span class="font-medium text-slate-700">28.09.2026 15:12</span></p>
+      <p class="text-xs text-slate-500">Oluşturulma: <span class="font-medium text-slate-700">28.09.2026 15:43</span></p>
     </div>
   </header>
 
   <main class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
     <section aria-labelledby="genel-bakis">
       <h2 id="genel-bakis" class="sr-only">Genel Bakış</h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p class="text-sm font-medium text-slate-500">İşlenen Toplam Mesaj</p>
           <p class="mt-2 text-4xl font-bold tabular-nums text-slate-900">15</p>
@@ -37,6 +37,14 @@
           </div>
           <p class="mt-2 text-4xl font-bold tabular-nums text-amber-600">3</p>
           <p class="mt-2 text-xs text-slate-500">Uzman ekip incelemesi bekleyen pay: %20</p>
+        </div>
+        <div class="rounded-2xl border border-rose-200 bg-white p-6 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-sm font-medium text-slate-500">Yüksek Öncelikli Vakalar</p>
+            <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/30">Acil</span>
+          </div>
+          <p class="mt-2 text-4xl font-bold tabular-nums text-rose-600">2</p>
+          <ul class="mt-2"><li class="mt-1 text-xs text-slate-600"><span class="font-mono font-semibold text-rose-700">#1</span> &middot; Güvenlik ihlali (IDOR)</li><li class="mt-1 text-xs text-slate-600"><span class="font-mono font-semibold text-rose-700">#4</span> &middot; İstenmeyen Etki</li></ul>
         </div>
         <div class="rounded-2xl border-2 border-rose-300 bg-rose-50 p-6 shadow-sm">
           <div class="flex items-center justify-between gap-2">
@@ -123,10 +131,16 @@
           <h2 id="talep-detaylari" class="text-lg font-semibold text-slate-900">Talep Detayları</h2>
           <p class="text-sm text-slate-500">Yanıt taslakları gönderilmeden önce müşteri temsilcisi tarafından onaylanmalıdır.</p>
         </div>
-        <div class="inline-flex flex-wrap gap-2" role="tablist" aria-label="Talep filtresi">
-          <button type="button" role="tab" data-filter="all" aria-selected="true" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Tümü (15)</button>
-          <button type="button" role="tab" data-filter="true" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">İnsana Devredilenler (3)</button>
-          <button type="button" role="tab" data-filter="false" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Doğrudan Yanıtlananlar (12)</button>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex flex-wrap gap-2" role="tablist" aria-label="Talep filtresi">
+            <button type="button" role="tab" data-filter="all" data-slug="tumu" aria-selected="true" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Tümü (15)</button>
+            <button type="button" role="tab" data-filter="true" data-slug="insana-devredilenler" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">İnsana Devredilenler (3)</button>
+            <button type="button" role="tab" data-filter="false" data-slug="dogrudan-yanitlananlar" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Doğrudan Yanıtlananlar (12)</button>
+          </div>
+          <button type="button" id="csv-indir" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            CSV Olarak İndir
+          </button>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -137,26 +151,29 @@
               <th scope="col" class="px-4 py-3">Kanal</th>
               <th scope="col" class="px-4 py-3">Müşteri ID</th>
               <th scope="col" class="px-4 py-3">Konu</th>
+              <th scope="col" class="px-4 py-3">Öncelik</th>
               <th scope="col" class="px-4 py-3">Durum</th>
               <th scope="col" class="px-4 py-3">Cevap Taslağı</th>
               <th scope="col" class="px-4 py-3">Dahili Not</th>
             </tr>
           </thead>
           <tbody id="talep-tablosu" class="divide-y divide-slate-100">
-            <tr class="align-top bg-rose-50/60 border-l-4 border-l-rose-500" data-devret="true">
+            <tr class="align-top bg-rose-50/60 border-l-4 border-l-rose-500" data-id="1" data-devret="true" data-oncelik="YUKSEK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#1</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">7</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 text-sky-700 ring-sky-600/20">Sipariş Durumu</span><span class="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">&#9888; Güvenlik İhlali</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-rose-50 text-rose-700 ring-rose-600/30"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>YÜKSEK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/30"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>İnsana Yönlendir</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, güvenliğiniz için paylaştığınız sipariş numarasını hesabınızla doğrulayamadık; bu nedenle sipariş detaylarını bu kanaldan paylaşamıyoruz. Ekibimiz kimlik doğrulaması için sizinle iletişime geçecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-rose-700 font-medium min-w-[14rem]">GÜVENLİK: Olası IDOR / müşteri uyuşmazlığı. 7 numaralı müşteri, 12 numaralı kullanıcıya ait 12 numaralı siparişi sorguladı. Sipariş içeriği gizlendi; kimlik doğrulaması gereklidir.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="2" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#2</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">5</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 text-sky-700 ring-sky-600/20">Sipariş Durumu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, 5 numaralı siparişinizin detayları:
 - Samsung Galaxy Tab White x4
@@ -166,38 +183,42 @@ Toplam tutar: $1,467.88 (indirimli: $1,205.80)
 Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">5 numaralı siparişin 5 numaralı müşteriye ait olduğu doğrulandı.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="3" data-devret="false" data-oncelik="ORTA">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#3</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">22</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 text-sky-700 ring-sky-600/20">Sipariş Durumu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-600/30"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>ORTA</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, 9999 numaralı bir siparişe ulaşamadık. Sipariş numaranızı kontrol edip tekrar paylaşabilir misiniz? Yardımcı olmaktan memnuniyet duyarız.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">9999 numaralı sipariş bulunamadı (HTTP 404).</td>
             </tr>
-            <tr class="align-top bg-amber-50/60 border-l-4 border-l-amber-400" data-devret="true">
+            <tr class="align-top bg-amber-50/60 border-l-4 border-l-amber-400" data-id="4" data-devret="true" data-oncelik="YUKSEK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#4</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">14</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-rose-50 text-rose-700 ring-rose-600/30">İstenmeyen Etki</span><span class="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Hassas Konu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-rose-50 text-rose-700 ring-rose-600/30"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>YÜKSEK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/30"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>İnsana Yönlendir</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, yaşadığınız durum için çok üzgünüz. Mesajınızı uzman ekibimize ilettik; en kısa sürede sizinle iletişime geçecekler. Geçmiş olsun.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Olası istenmeyen etki bildirimi. Zorunlu insan devri; tıbbi tavsiye veya ürün önerisi verilmedi.</td>
             </tr>
-            <tr class="align-top bg-amber-50/60 border-l-4 border-l-amber-400" data-devret="true">
+            <tr class="align-top bg-amber-50/60 border-l-4 border-l-amber-400" data-id="5" data-devret="true" data-oncelik="ORTA">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#5</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">18</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-600/30">İade / Şikâyet</span><span class="mt-1.5 inline-flex items-center gap-1 whitespace-nowrap rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Hassas Konu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-amber-50 text-amber-800 ring-amber-600/30"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>ORTA</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/30"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>İnsana Yönlendir</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, yaşadığınız olumsuzluk için özür dileriz. Talebiniz müşteri hizmetleri ekibimize iletildi; süreçle ilgili en kısa sürede sizinle iletişime geçecekler.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">İade / şikâyet talebi. Zorunlu insan devri.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="6" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#6</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">3</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 text-sky-700 ring-sky-600/20">Sipariş Durumu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Hello! Here are the details of your order #3:
 - Fish Steak x1
@@ -210,20 +231,22 @@ Total: $1,794.85 (after discount: $1,625.77)
 Our team will share the shipping update with you shortly.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">3 numaralı siparişin 3 numaralı müşteriye ait olduğu doğrulandı.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="7" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#7</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">27</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-slate-100 text-slate-700 ring-slate-500/20">Diğer</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Yanıt gönderilmemelidir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Spam / şüpheli bağlantı tespit edildi. Yanıt verilmemeli, bağlantılar açılmamalı; göndericinin engellenmesi değerlendirilmelidir.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="8" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#8</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">4</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 text-sky-700 ring-sky-600/20">Sipariş Durumu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, 4 numaralı siparişinizin detayları:
 - Sports Sneakers Off White Red x3
@@ -233,65 +256,72 @@ Kargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.
 Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">4 numaralı siparişin 4 numaralı müşteriye ait olduğu doğrulandı. İkincil niyet: Fiyat.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="9" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#9</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">1</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-violet-50 text-violet-700 ring-violet-600/20">Ürün Sorusu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for &#x27;retinol&#x27; returned no relevant cosmetic match; generic reply used.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="10" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#10</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">2</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20">Fiyat</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen &quot;Olay Ultra Moisture Shea Butter Body Wash&quot; ürünümüzün güncel fiyatı $12.99. Aktif kampanyalarımızı web sitemizde bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Price inquiry. Verify current price list before sending. Product search &#x27;moisture&#x27; matched &#x27;Olay Ultra Moisture Shea Butter Body Wash&#x27; (id 119, $12.99); verify against the official catalog before sending. İkincil niyet: Ürün Sorusu.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="11" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#11</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">8</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-violet-50 text-violet-700 ring-violet-600/20">Ürün Sorusu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for &#x27;vitamin c&#x27; returned no relevant cosmetic match; generic reply used.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="12" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#12</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">6</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-slate-100 text-slate-700 ring-slate-500/20">Diğer</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, bize ulaştığınız için teşekkürler! Ekibimiz sorunuzu yanıtlamak için en kısa sürede size dönüş yapacak.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Genel talep. Standart şirket bilgileriyle yanıtlanmalıdır.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="13" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#13</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">9</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-violet-50 text-violet-700 ring-violet-600/20">Ürün Sorusu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for &#x27;toner&#x27; returned no relevant cosmetic match; generic reply used.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="14" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#14</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-pink-50 text-pink-700 ring-pink-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>Instagram</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">10</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20">Fiyat</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Price inquiry. Verify current price list before sending. No product keyword detected; catalog search skipped.</td>
             </tr>
-            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-devret="false">
+            <tr class="align-top border-l-4 border-l-transparent hover:bg-slate-50" data-id="15" data-devret="false" data-oncelik="DUSUK">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#15</td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-green-50 text-green-700 ring-green-600/20"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z"/></svg>WhatsApp</span></td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">11</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start"><span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-violet-50 text-violet-700 ring-violet-600/20">Ürün Sorusu</span></div></td>
+              <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs font-bold tracking-wide ring-1 ring-inset bg-emerald-50 text-emerald-700 ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>DÜŞÜK</span></td>
               <td class="px-4 py-4"><span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Otomatik Yanıt</span></td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.</td>
               <td class="px-4 py-4 text-xs leading-relaxed text-slate-500 min-w-[14rem]">Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. No product keyword detected; catalog search skipped.</td>
@@ -307,6 +337,7 @@ Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.</td>
     İstenmeyen etki ve iade / şikâyet talepleri, tıbbi ve hukuki güvenlik politikası gereği her zaman insana devredilir.
   </footer>
 
+  <script type="application/json" id="talep-verisi">{"columns": ["id", "kanal", "musteri_id", "konu", "oncelik", "devret", "cevap_taslagi", "not"], "rows": {"1": [1, "whatsapp", 7, "siparis-durumu", "YUKSEK", "true", "Merhaba, güvenliğiniz için paylaştığınız sipariş numarasını hesabınızla doğrulayamadık; bu nedenle sipariş detaylarını bu kanaldan paylaşamıyoruz. Ekibimiz kimlik doğrulaması için sizinle iletişime geçecektir.", "SECURITY: Potential IDOR / customer mismatch. Customer 7 requested order 12, which belongs to user 12. Order contents concealed; identity verification required."], "2": [2, "instagram", 5, "siparis-durumu", "DUSUK", "false", "Merhaba, 5 numaralı siparişinizin detayları:\n- Samsung Galaxy Tab White x4\n- Soft Drinks x4\n- Powder Canister x4\nToplam tutar: $1,467.88 (indirimli: $1,205.80)\nKargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.", "Order 5 ownership verified for customer 5."], "3": [3, "whatsapp", 22, "siparis-durumu", "ORTA", "false", "Merhaba, 9999 numaralı bir siparişe ulaşamadık. Sipariş numaranızı kontrol edip tekrar paylaşabilir misiniz? Yardımcı olmaktan memnuniyet duyarız.", "Order 9999 not found (HTTP 404)."], "4": [4, "instagram", 14, "istenmeyen-etki", "YUKSEK", "true", "Merhaba, yaşadığınız durum için çok üzgünüz. Mesajınızı uzman ekibimize ilettik; en kısa sürede sizinle iletişime geçecekler. Geçmiş olsun.", "Possible adverse reaction reported. Mandatory human handoff; no medical advice or product recommendation given."], "5": [5, "whatsapp", 18, "iade-sikayet", "ORTA", "true", "Merhaba, yaşadığınız olumsuzluk için özür dileriz. Talebiniz müşteri hizmetleri ekibimize iletildi; süreçle ilgili en kısa sürede sizinle iletişime geçecekler.", "Return/complaint request. Mandatory human handoff."], "6": [6, "instagram", 3, "siparis-durumu", "DUSUK", "false", "Hello! Here are the details of your order #3:\n- Fish Steak x1\n- iPhone 13 Pro x1\n- Realme X x1\n- Man Short Sleeve Shirt x5\n- Dior J'adore x2\n- Party Glasses x5\nTotal: $1,794.85 (after discount: $1,625.77)\nOur team will share the shipping update with you shortly.", "Order 3 ownership verified for customer 3."], "7": [7, "instagram", 27, "diger", "DUSUK", "false", "Yanıt gönderilmemelidir.", "Spam / suspicious link detected. Do not reply or open links; consider blocking the sender."], "8": [8, "whatsapp", 4, "siparis-durumu", "DUSUK", "false", "Merhaba, 4 numaralı siparişinizin detayları:\n- Sports Sneakers Off White Red x3\n- Dior J'adore x4\nToplam tutar: $689.93 (indirimli: $636.81)\nKargo bilgisi ekibimiz tarafından en kısa sürede paylaşılacaktır.\nFiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.", "Order 4 ownership verified for customer 4. Secondary intent: fiyat."], "9": [9, "whatsapp", 1, "urun-sorusu", "DUSUK", "false", "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.", "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'retinol' returned no relevant cosmetic match; generic reply used."], "10": [10, "instagram", 2, "fiyat", "DUSUK", "false", "Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen \"Olay Ultra Moisture Shea Butter Body Wash\" ürünümüzün güncel fiyatı $12.99. Aktif kampanyalarımızı web sitemizde bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir.", "Price inquiry. Verify current price list before sending. Product search 'moisture' matched 'Olay Ultra Moisture Shea Butter Body Wash' (id 119, $12.99); verify against the official catalog before sending. Secondary intent: urun-sorusu."], "11": [11, "whatsapp", 8, "urun-sorusu", "DUSUK", "false", "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.", "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'vitamin c' returned no relevant cosmetic match; generic reply used."], "12": [12, "instagram", 6, "diger", "DUSUK", "false", "Merhaba, bize ulaştığınız için teşekkürler! Ekibimiz sorunuzu yanıtlamak için en kısa sürede size dönüş yapacak.", "General inquiry. Answer with standard company information."], "13": [13, "whatsapp", 9, "urun-sorusu", "DUSUK", "false", "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.", "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'toner' returned no relevant cosmetic match; generic reply used."], "14": [14, "instagram", 10, "fiyat", "DUSUK", "false", "Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.", "Price inquiry. Verify current price list before sending. No product keyword detected; catalog search skipped."], "15": [15, "whatsapp", 11, "urun-sorusu", "DUSUK", "false", "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.", "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. No product keyword detected; catalog search skipped."]}}</script>
   <script>
     (function () {
       var ACTIVE = ["bg-slate-900", "text-white", "shadow-sm"];
@@ -314,6 +345,13 @@ Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.</td>
       var buttons = document.querySelectorAll(".filter-btn");
       var rows = document.querySelectorAll("#talep-tablosu tr");
       var emptyState = document.getElementById("bos-durum");
+      var downloadButton = document.getElementById("csv-indir");
+      var exportData = JSON.parse(document.getElementById("talep-verisi").textContent);
+      var activeSlug = "tumu";
+
+      function visibleRows() {
+        return Array.prototype.filter.call(rows, function (row) { return !row.classList.contains("hidden"); });
+      }
 
       function applyFilter(filter) {
         var visible = 0;
@@ -323,17 +361,42 @@ Fiyat sorunuzla ilgili güncel bilgiyi ekibimiz ayrıca paylaşacaktır.</td>
           if (show) { visible += 1; }
         });
         emptyState.classList.toggle("hidden", visible !== 0);
+        downloadButton.disabled = visible === 0;
         buttons.forEach(function (button) {
           var isActive = button.getAttribute("data-filter") === filter;
           button.setAttribute("aria-selected", isActive ? "true" : "false");
           ACTIVE.forEach(function (cls) { button.classList.toggle(cls, isActive); });
           INACTIVE.forEach(function (cls) { button.classList.toggle(cls, !isActive); });
+          if (isActive) { activeSlug = button.getAttribute("data-slug"); }
         });
+      }
+
+      function csvCell(value) {
+        var text = value === null || value === undefined ? "" : String(value);
+        return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+      }
+
+      function downloadCsv() {
+        var lines = [exportData.columns.map(csvCell).join(",")];
+        visibleRows().forEach(function (row) {
+          var record = exportData.rows[row.getAttribute("data-id")];
+          if (record) { lines.push(record.map(csvCell).join(",")); }
+        });
+        var blob = new Blob(["\uFEFF" + lines.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = "talepler-" + activeSlug + ".csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 0);
       }
 
       buttons.forEach(function (button) {
         button.addEventListener("click", function () { applyFilter(button.getAttribute("data-filter")); });
       });
+      downloadButton.addEventListener("click", downloadCsv);
       applyFilter("all");
     })();
   </script>

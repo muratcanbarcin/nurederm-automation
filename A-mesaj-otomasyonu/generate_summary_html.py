@@ -14,11 +14,13 @@ from string import Template
 from typing import Any
 
 from process_messages import (
+    CSV_COLUMNS,
     HANDOFF_CATEGORIES,
     INPUT_PATH,
     OUTPUT_PATH,
     SECURITY_NOTE_PREFIX,
     Category,
+    Priority,
 )
 
 HTML_PATH = OUTPUT_PATH.parent / "ozet.html"
@@ -48,6 +50,18 @@ CATEGORY_STYLES: dict[Category, str] = {
     Category.OTHER: "bg-slate-100 text-slate-700 ring-slate-500/20",
     Category.RETURN_COMPLAINT: "bg-amber-50 text-amber-800 ring-amber-600/30",
     Category.ADVERSE_EFFECT: "bg-rose-50 text-rose-700 ring-rose-600/30",
+}
+
+PRIORITY_LABELS: dict[Priority, str] = {
+    Priority.HIGH: "YÜKSEK",
+    Priority.MEDIUM: "ORTA",
+    Priority.LOW: "DÜŞÜK",
+}
+
+PRIORITY_STYLES: dict[Priority, tuple[str, str]] = {
+    Priority.HIGH: ("bg-rose-50 text-rose-700 ring-rose-600/30", "bg-rose-500"),
+    Priority.MEDIUM: ("bg-amber-50 text-amber-800 ring-amber-600/30", "bg-amber-500"),
+    Priority.LOW: ("bg-emerald-50 text-emerald-700 ring-emerald-600/20", "bg-emerald-500"),
 }
 
 CHANNEL_META: dict[str, tuple[str, str]] = {
@@ -145,11 +159,25 @@ class DashboardRow:
     channel: str
     customer_id: int
     category: Category
+    priority: Priority
     handoff: bool
     reply: str
     note: str
     is_security_violation: bool
     is_sensitive: bool
+
+    def csv_record(self) -> list[str | int]:
+        """Values in CSV_COLUMNS order, matching the talepler.csv export."""
+        return [
+            self.id,
+            self.channel,
+            self.customer_id,
+            self.category.value,
+            self.priority.value,
+            "true" if self.handoff else "false",
+            self.reply,
+            self.note,
+        ]
 
 
 def translate_note(note: str) -> str:
@@ -194,6 +222,7 @@ def build_rows(messages: list[dict[str, Any]], tickets: list[dict[str, Any]]) ->
                 channel=str(message["kanal"]).lower(),
                 customer_id=message["musteri_id"],
                 category=category,
+                priority=Priority(ticket["oncelik"]),
                 handoff=bool(ticket["devret"]),
                 reply=ticket["cevap_taslagi"],
                 note=ticket["not"],
@@ -221,6 +250,15 @@ def render_category_badge(category: Category) -> str:
     return (
         f'<span class="inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium '
         f'ring-1 ring-inset {CATEGORY_STYLES[category]}">{escape(CATEGORY_LABELS[category])}</span>'
+    )
+
+
+def render_priority_badge(priority: Priority) -> str:
+    style, dot = PRIORITY_STYLES[priority]
+    return (
+        f'<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-xs '
+        f'font-bold tracking-wide ring-1 ring-inset {style}">'
+        f'<span class="h-1.5 w-1.5 rounded-full {dot}"></span>{escape(PRIORITY_LABELS[priority])}</span>'
     )
 
 
@@ -259,11 +297,12 @@ def render_row(row: DashboardRow) -> str:
 
     note_class = "text-rose-700 font-medium" if row.is_security_violation else "text-slate-500"
     return f"""
-            <tr class="align-top {row_class}" data-devret="{str(row.handoff).lower()}">
+            <tr class="align-top {row_class}" data-id="{row.id}" data-devret="{str(row.handoff).lower()}" data-oncelik="{row.priority.value}">
               <td class="px-4 py-4 font-mono text-sm font-semibold text-slate-900">#{row.id}</td>
               <td class="px-4 py-4">{render_channel_badge(row.channel)}</td>
               <td class="px-4 py-4 font-mono text-sm text-slate-600">{row.customer_id}</td>
               <td class="px-4 py-4"><div class="flex flex-col items-start">{render_category_badge(row.category)}{flag}</div></td>
+              <td class="px-4 py-4">{render_priority_badge(row.priority)}</td>
               <td class="px-4 py-4">{render_status_badge(row.handoff)}</td>
               <td class="px-4 py-4 text-sm leading-relaxed text-slate-700 whitespace-pre-line min-w-[18rem]">{escape(row.reply)}</td>
               <td class="px-4 py-4 text-xs leading-relaxed {note_class} min-w-[14rem]">{escape(translate_note(row.note))}</td>
@@ -305,6 +344,33 @@ def render_security_details(rows: list[DashboardRow]) -> str:
     return f'<ul class="mt-2">{items}</ul>'
 
 
+def render_high_priority_details(rows: list[DashboardRow]) -> str:
+    high = [row for row in rows if row.priority is Priority.HIGH]
+    if not high:
+        return '<p class="mt-2 text-xs text-slate-500">Acil müdahale gerektiren vaka bulunmamaktadır.</p>'
+    items = "".join(
+        f'<li class="mt-1 text-xs text-slate-600"><span class="font-mono font-semibold text-rose-700">'
+        f"#{row.id}</span> &middot; "
+        f"{'Güvenlik ihlali (IDOR)' if row.is_security_violation else escape(CATEGORY_LABELS[row.category])}</li>"
+        for row in high
+    )
+    return f'<ul class="mt-2">{items}</ul>'
+
+
+def render_export_payload(rows: list[DashboardRow]) -> str:
+    """Serialize rows for client-side CSV export, safe for embedding in a <script> element."""
+    payload = {
+        "columns": list(CSV_COLUMNS),
+        "rows": {str(row.id): row.csv_record() for row in rows},
+    }
+    return (
+        json.dumps(payload, ensure_ascii=False)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+
 PAGE_TEMPLATE = Template("""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -331,7 +397,7 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
   <main class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
     <section aria-labelledby="genel-bakis">
       <h2 id="genel-bakis" class="sr-only">Genel Bakış</h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p class="text-sm font-medium text-slate-500">İşlenen Toplam Mesaj</p>
           <p class="mt-2 text-4xl font-bold tabular-nums text-slate-900">$total</p>
@@ -344,6 +410,14 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
           </div>
           <p class="mt-2 text-4xl font-bold tabular-nums text-amber-600">$handoff_count</p>
           <p class="mt-2 text-xs text-slate-500">Uzman ekip incelemesi bekleyen pay: %$handoff_percent</p>
+        </div>
+        <div class="rounded-2xl border border-rose-200 bg-white p-6 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-sm font-medium text-slate-500">Yüksek Öncelikli Vakalar</p>
+            <span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/30">Acil</span>
+          </div>
+          <p class="mt-2 text-4xl font-bold tabular-nums text-rose-600">$high_priority_count</p>
+          $high_priority_details
         </div>
         <div class="rounded-2xl border-2 border-rose-300 bg-rose-50 p-6 shadow-sm">
           <div class="flex items-center justify-between gap-2">
@@ -370,10 +444,16 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
           <h2 id="talep-detaylari" class="text-lg font-semibold text-slate-900">Talep Detayları</h2>
           <p class="text-sm text-slate-500">Yanıt taslakları gönderilmeden önce müşteri temsilcisi tarafından onaylanmalıdır.</p>
         </div>
-        <div class="inline-flex flex-wrap gap-2" role="tablist" aria-label="Talep filtresi">
-          <button type="button" role="tab" data-filter="all" aria-selected="true" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Tümü ($total)</button>
-          <button type="button" role="tab" data-filter="true" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">İnsana Devredilenler ($handoff_count)</button>
-          <button type="button" role="tab" data-filter="false" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Doğrudan Yanıtlananlar ($auto_count)</button>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex flex-wrap gap-2" role="tablist" aria-label="Talep filtresi">
+            <button type="button" role="tab" data-filter="all" data-slug="tumu" aria-selected="true" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Tümü ($total)</button>
+            <button type="button" role="tab" data-filter="true" data-slug="insana-devredilenler" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">İnsana Devredilenler ($handoff_count)</button>
+            <button type="button" role="tab" data-filter="false" data-slug="dogrudan-yanitlananlar" aria-selected="false" class="filter-btn rounded-lg px-3 py-2 text-sm font-medium">Doğrudan Yanıtlananlar ($auto_count)</button>
+          </div>
+          <button type="button" id="csv-indir" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            CSV Olarak İndir
+          </button>
         </div>
       </div>
       <div class="overflow-x-auto">
@@ -384,6 +464,7 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
               <th scope="col" class="px-4 py-3">Kanal</th>
               <th scope="col" class="px-4 py-3">Müşteri ID</th>
               <th scope="col" class="px-4 py-3">Konu</th>
+              <th scope="col" class="px-4 py-3">Öncelik</th>
               <th scope="col" class="px-4 py-3">Durum</th>
               <th scope="col" class="px-4 py-3">Cevap Taslağı</th>
               <th scope="col" class="px-4 py-3">Dahili Not</th>
@@ -401,6 +482,7 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
     İstenmeyen etki ve iade / şikâyet talepleri, tıbbi ve hukuki güvenlik politikası gereği her zaman insana devredilir.
   </footer>
 
+  <script type="application/json" id="talep-verisi">$export_payload</script>
   <script>
     (function () {
       var ACTIVE = ["bg-slate-900", "text-white", "shadow-sm"];
@@ -408,6 +490,13 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
       var buttons = document.querySelectorAll(".filter-btn");
       var rows = document.querySelectorAll("#talep-tablosu tr");
       var emptyState = document.getElementById("bos-durum");
+      var downloadButton = document.getElementById("csv-indir");
+      var exportData = JSON.parse(document.getElementById("talep-verisi").textContent);
+      var activeSlug = "tumu";
+
+      function visibleRows() {
+        return Array.prototype.filter.call(rows, function (row) { return !row.classList.contains("hidden"); });
+      }
 
       function applyFilter(filter) {
         var visible = 0;
@@ -417,17 +506,42 @@ PAGE_TEMPLATE = Template("""<!DOCTYPE html>
           if (show) { visible += 1; }
         });
         emptyState.classList.toggle("hidden", visible !== 0);
+        downloadButton.disabled = visible === 0;
         buttons.forEach(function (button) {
           var isActive = button.getAttribute("data-filter") === filter;
           button.setAttribute("aria-selected", isActive ? "true" : "false");
           ACTIVE.forEach(function (cls) { button.classList.toggle(cls, isActive); });
           INACTIVE.forEach(function (cls) { button.classList.toggle(cls, !isActive); });
+          if (isActive) { activeSlug = button.getAttribute("data-slug"); }
         });
+      }
+
+      function csvCell(value) {
+        var text = value === null || value === undefined ? "" : String(value);
+        return /[",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+      }
+
+      function downloadCsv() {
+        var lines = [exportData.columns.map(csvCell).join(",")];
+        visibleRows().forEach(function (row) {
+          var record = exportData.rows[row.getAttribute("data-id")];
+          if (record) { lines.push(record.map(csvCell).join(",")); }
+        });
+        var blob = new Blob(["\\uFEFF" + lines.join("\\r\\n") + "\\r\\n"], { type: "text/csv;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = "talepler-" + activeSlug + ".csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 0);
       }
 
       buttons.forEach(function (button) {
         button.addEventListener("click", function () { applyFilter(button.getAttribute("data-filter")); });
       });
+      downloadButton.addEventListener("click", downloadCsv);
       applyFilter("all");
     })();
   </script>
@@ -440,6 +554,7 @@ def render_page(rows: list[DashboardRow], generated_at: datetime) -> str:
     total = len(rows)
     handoff_count = sum(1 for row in rows if row.handoff)
     violation_count = sum(1 for row in rows if row.is_security_violation)
+    high_priority_count = sum(1 for row in rows if row.priority is Priority.HIGH)
     return PAGE_TEMPLATE.substitute(
         generated_at=generated_at.strftime("%d.%m.%Y %H:%M"),
         total=total,
@@ -448,8 +563,11 @@ def render_page(rows: list[DashboardRow], generated_at: datetime) -> str:
         handoff_percent=round(handoff_count * 100 / total) if total else 0,
         violation_count=violation_count,
         security_details=render_security_details(rows),
+        high_priority_count=high_priority_count,
+        high_priority_details=render_high_priority_details(rows),
         category_cards=render_category_cards(rows),
         rows="".join(render_row(row) for row in rows),
+        export_payload=render_export_payload(rows),
     )
 
 
