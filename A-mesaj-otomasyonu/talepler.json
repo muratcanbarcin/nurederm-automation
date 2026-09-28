@@ -60,21 +60,21 @@
     "konu": "urun-sorusu",
     "devret": false,
     "cevap_taslagi": "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",
-    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation."
+    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'retinol' returned no relevant cosmetic match; generic reply used."
   },
   {
     "id": 10,
     "konu": "fiyat",
     "devret": false,
-    "cevap_taslagi": "Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.\nÜrün sorunuzla ilgili bilgiyi ekibimiz ayrıca paylaşacaktır.",
-    "not": "Price inquiry. Verify current price list before sending. Secondary intent: urun-sorusu."
+    "cevap_taslagi": "Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen \"Olay Ultra Moisture Shea Butter Body Wash\" ürünümüzün güncel fiyatı $12.99. Aktif kampanyalarımızı web sitemizde bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir.",
+    "not": "Price inquiry. Verify current price list before sending. Product search 'moisture' matched 'Olay Ultra Moisture Shea Butter Body Wash' (id 119, $12.99); verify against the official catalog before sending. Secondary intent: urun-sorusu."
   },
   {
     "id": 11,
     "konu": "urun-sorusu",
     "devret": false,
     "cevap_taslagi": "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",
-    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation."
+    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'vitamin c' returned no relevant cosmetic match; generic reply used."
   },
   {
     "id": 12,
@@ -88,20 +88,20 @@
     "konu": "urun-sorusu",
     "devret": false,
     "cevap_taslagi": "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",
-    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation."
+    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. Product search for 'toner' returned no relevant cosmetic match; generic reply used."
   },
   {
     "id": 14,
     "konu": "fiyat",
     "devret": false,
     "cevap_taslagi": "Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa süre içinde size ayrıca iletecektir.",
-    "not": "Price inquiry. Verify current price list before sending."
+    "not": "Price inquiry. Verify current price list before sending. No product keyword detected; catalog search skipped."
   },
   {
     "id": 15,
     "konu": "urun-sorusu",
     "devret": false,
     "cevap_taslagi": "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa süre içinde size iletecektir.",
-    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation."
+    "not": "Product question. Answer from official product data sheet only; no skin diagnosis or personal recommendation. No product keyword detected; catalog search skipped."
   }
 ]

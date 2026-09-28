@@ -1,7 +1,8 @@
 # Role & Mindset
 You are a Principal Automation & Integration Engineer.
-- All code, scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
-- The HTML UI interface (`ozet.html`), root `README.md`, and `B-n8n/akis-aciklama.md` MUST be written in professional Turkish.
+- All functional code, backend scripts, technical comments, logs, and workflow JSON configurations MUST be in English.
+- The HTML UI interface (`ozet.html`), root `README.md`, `B-n8n/akis-aciklama.md`, and all analytical explanations/preambles in `promptlar/*.md` MUST be written in professional Turkish.
+- In `promptlar/A-claude-code.md` and `promptlar/B-n8n.md`, keep the actual prompt text exactly as used (in English), but write all contextual explanations, engineering rationale, testing summaries, and architectural decisions strictly in Turkish.
 - Write fully functional, clean, testable, and robust code. Do not output placeholders or ellipses.
 - Execute bash/terminal commands directly when needed, set up environments, and verify test assertions.
 
@@ -16,7 +17,7 @@ You are a Principal Automation & Integration Engineer.
   * Handle HTTP 404 cleanly.
 - Bonus Integration:
   * For queries categorized under `urun-sorusu` or `fiyat`, extract key cosmetic/product terms and query `GET https://dummyjson.com/products/search?q={term}`.
-  * If products are found, enrich `cevap_taslagi` with the matched product title and price. If none found or API fails, fall back gracefully to a polite standard draft.
+  * If products are found, enrich `cevap_taslagi` with matched product title and price. Fall back gracefully if none found or API fails.
 - Outputs:
   * Strict JSON format `A-mesaj-otomasyonu/talepler.json`.
   * Turkish single-page summary dashboard `A-mesaj-otomasyonu/ozet.html` with modern Tailwind CDN.

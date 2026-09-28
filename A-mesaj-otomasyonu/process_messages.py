@@ -2,7 +2,8 @@
 
 Loads inbound customer messages, classifies each one into a support category,
 enforces medical/legal handoff rules, verifies order ownership against the
-DummyJSON carts API (IDOR protection) and writes draft replies to talepler.json.
+DummyJSON carts API (IDOR protection), enriches product/price replies from the
+DummyJSON product search API and writes draft replies to talepler.json.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ INPUT_PATH = BASE_DIR / "mesajlar.json"
 OUTPUT_PATH = BASE_DIR / "talepler.json"
 
 CARTS_API_URL = "https://dummyjson.com/carts/{order_id}"
+PRODUCT_SEARCH_API_URL = "https://dummyjson.com/products/search"
 HTTP_TIMEOUT_SECONDS = 10
 
 SECURITY_NOTE_PREFIX = "SECURITY:"
@@ -235,6 +237,172 @@ def make_cart_fetcher(session: requests.Session) -> CartFetcher:
 
 
 # ---------------------------------------------------------------------------
+# Product search (DummyJSON)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ProductTerm:
+    trigger: str
+    search_terms: tuple[str, ...]
+    specific: bool
+
+
+# Ordered longest/most specific first; matched triggers are consumed so that
+# "güneş kremi" does not additionally yield the generic "krem" term.
+PRODUCT_TERMS: tuple[ProductTerm, ...] = (
+    ProductTerm("güneş kremi", ("sunscreen", "sun cream"), True),
+    ProductTerm("sunscreen", ("sunscreen",), True),
+    ProductTerm("c vitamini", ("vitamin c",), True),
+    ProductTerm("vitamin c", ("vitamin c",), True),
+    ProductTerm("retinol", ("retinol",), True),
+    ProductTerm("nemlendirici", ("moisturizer", "moisture"), True),
+    ProductTerm("moisturi", ("moisturizer", "moisture"), True),
+    ProductTerm("serum", ("serum",), False),
+    ProductTerm("tonik", ("toner",), False),
+    ProductTerm("toner", ("toner",), False),
+    ProductTerm("losyon", ("lotion",), False),
+    ProductTerm("lotion", ("lotion",), False),
+    ProductTerm("krem", ("cream",), False),
+    ProductTerm("cream", ("cream",), False),
+)
+
+# DummyJSON search is a loose substring match across all categories
+# (e.g. "cream" returns "Ice Cream"), so only cosmetic categories are accepted.
+COSMETIC_CATEGORIES: frozenset[str] = frozenset({"beauty", "skin-care"})
+
+
+def extract_product_terms(text: str) -> list[str]:
+    """Return English search terms for cosmetic keywords found in the message.
+
+    When a specific term (e.g. retinol) is present, generic terms (e.g. serum)
+    are dropped: answering a retinol question with an unrelated serum would be
+    misleading.
+    """
+    remaining = normalize(text)
+    specific: list[str] = []
+    generic: list[str] = []
+    for term in PRODUCT_TERMS:
+        if term.trigger not in remaining:
+            continue
+        remaining = remaining.replace(term.trigger, " ")
+        bucket = specific if term.specific else generic
+        bucket.extend(t for t in term.search_terms if t not in bucket)
+    return specific or generic
+
+
+@dataclass(frozen=True)
+class ProductSearchResult:
+    status: LookupStatus
+    products: tuple[dict[str, Any], ...] = ()
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class ProductMatch:
+    term: str
+    product_id: int
+    title: str
+    price: float
+
+
+@dataclass(frozen=True)
+class ProductEnrichment:
+    terms: tuple[str, ...]
+    match: ProductMatch | None = None
+    errors: tuple[str, ...] = ()
+
+
+ProductSearcher = Callable[[str], ProductSearchResult]
+
+
+def make_product_searcher(session: requests.Session) -> ProductSearcher:
+    cache: dict[str, ProductSearchResult] = {}
+
+    def search_products(term: str) -> ProductSearchResult:
+        if term in cache:
+            return cache[term]
+        try:
+            response = session.get(
+                PRODUCT_SEARCH_API_URL, params={"q": term}, timeout=HTTP_TIMEOUT_SECONDS
+            )
+        except requests.RequestException as exc:
+            logger.warning("Product search failed for %r: %s", term, exc)
+            return ProductSearchResult(LookupStatus.ERROR, error=str(exc))
+
+        if not response.ok:
+            return ProductSearchResult(LookupStatus.ERROR, error=f"HTTP {response.status_code}")
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            return ProductSearchResult(LookupStatus.ERROR, error=f"Invalid JSON: {exc}")
+        products = payload.get("products") if isinstance(payload, dict) else None
+        if not isinstance(products, list):
+            return ProductSearchResult(LookupStatus.ERROR, error="Unexpected search payload shape")
+
+        result = ProductSearchResult(
+            LookupStatus.FOUND if products else LookupStatus.NOT_FOUND,
+            tuple(p for p in products if isinstance(p, dict)),
+        )
+        cache[term] = result
+        return result
+
+    return search_products
+
+
+def select_relevant_product(term: str, products: tuple[dict[str, Any], ...]) -> ProductMatch | None:
+    """Pick the best cosmetic product whose title (preferred) or description contains the term."""
+    pattern = re.compile(rf"\b{re.escape(term)}\b", re.IGNORECASE)
+    best: tuple[int, ProductMatch] | None = None
+    for product in products:
+        if product.get("category") not in COSMETIC_CATEGORIES:
+            continue
+        title = product.get("title")
+        price = product.get("price")
+        if not isinstance(title, str) or not title.strip() or not isinstance(price, (int, float)):
+            continue
+        if pattern.search(title):
+            score = 2
+        elif pattern.search(str(product.get("description", ""))):
+            score = 1
+        else:
+            continue
+        if best is None or score > best[0]:
+            best = (score, ProductMatch(term, int(product.get("id", 0)), title.strip(), float(price)))
+    return best[1] if best else None
+
+
+def enrich_from_catalog(text: str, search_products: ProductSearcher | None) -> ProductEnrichment:
+    terms = tuple(extract_product_terms(text))
+    if not terms or search_products is None:
+        return ProductEnrichment(terms)
+    errors: list[str] = []
+    for term in terms:
+        result = search_products(term)
+        if result.status is LookupStatus.ERROR:
+            errors.append(f"{term}: {result.error}")
+            continue
+        match = select_relevant_product(term, result.products)
+        if match is not None:
+            return ProductEnrichment(terms, match, tuple(errors))
+    return ProductEnrichment(terms, None, tuple(errors))
+
+
+def _enrichment_note(enrichment: ProductEnrichment) -> str:
+    if enrichment.match is not None:
+        match = enrichment.match
+        return (
+            f"Product search '{match.term}' matched '{match.title}' (id {match.product_id}, "
+            f"{_format_money(match.price)}); verify against the official catalog before sending."
+        )
+    if not enrichment.terms:
+        return "No product keyword detected; catalog search skipped."
+    searched = ", ".join(f"'{term}'" for term in enrichment.terms)
+    if enrichment.errors:
+        return f"Product search unavailable ({'; '.join(enrichment.errors)}); generic reply used."
+    return f"Product search for {searched} returned no relevant cosmetic match; generic reply used."
+
+
+# ---------------------------------------------------------------------------
 # Reply drafting
 # ---------------------------------------------------------------------------
 
@@ -243,6 +411,7 @@ class Draft:
     devret: bool
     reply: str
     note: str
+    covered_intents: frozenset[Category] = frozenset()
 
 
 def _format_money(amount: float) -> str:
@@ -364,32 +533,65 @@ def draft_return_complaint(lang: str) -> Draft:
     return Draft(True, reply, "Return/complaint request. Mandatory human handoff.")
 
 
-def draft_price(lang: str) -> Draft:
-    reply = (
-        "Thank you for your interest! Current prices and active campaigns are listed "
-        "on our website; our team will also share the details with you shortly."
-        if lang == "en"
-        else "Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif "
-        "kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa "
-        "süre içinde size ayrıca iletecektir."
+def draft_price(lang: str, enrichment: ProductEnrichment) -> Draft:
+    match = enrichment.match
+    if match is not None:
+        price = _format_money(match.price)
+        reply = (
+            f'Thank you for your interest! The product matching your request, "{match.title}", '
+            f"is currently listed at {price}. Active campaigns are available on our website; "
+            "our team will be happy to share further details."
+            if lang == "en"
+            else f'Merhaba, ilginiz için teşekkürler! Sorduğunuz ürünle eşleşen "{match.title}" '
+            f"ürünümüzün güncel fiyatı {price}. Aktif kampanyalarımızı web sitemizde "
+            "bulabilirsiniz; dilerseniz ekibimiz detayları size ayrıca iletecektir."
+        )
+    else:
+        reply = (
+            "Thank you for your interest! Current prices and active campaigns are listed "
+            "on our website; our team will also share the details with you shortly."
+            if lang == "en"
+            else "Merhaba, ilginiz için teşekkürler! Güncel fiyatlarımızı ve aktif "
+            "kampanyalarımızı web sitemizde bulabilirsiniz; ekibimiz detayları kısa "
+            "süre içinde size ayrıca iletecektir."
+        )
+    return Draft(
+        False,
+        reply,
+        f"Price inquiry. Verify current price list before sending. {_enrichment_note(enrichment)}",
+        frozenset({Category.PRODUCT_QUESTION}) if match is not None else frozenset(),
     )
-    return Draft(False, reply, "Price inquiry. Verify current price list before sending.")
 
 
-def draft_product_question(lang: str) -> Draft:
-    reply = (
-        "Thank you for your question! Detailed product information is available on "
-        "our product pages; our team will share the specifics with you shortly."
-        if lang == "en"
-        else "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi "
-        "ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa "
-        "süre içinde size iletecektir."
-    )
+def draft_product_question(lang: str, enrichment: ProductEnrichment) -> Draft:
+    match = enrichment.match
+    if match is not None:
+        price = _format_money(match.price)
+        reply = (
+            f'Thank you for your question! Our catalog includes "{match.title}" '
+            f"(current price: {price}), which matches your request. Our team will share "
+            "its ingredient and usage details from the official product information shortly."
+            if lang == "en"
+            else f'Merhaba, sorunuz için teşekkürler! Kataloğumuzda sorunuzla eşleşen '
+            f'"{match.title}" ürünümüz bulunuyor (güncel fiyatı: {price}). Ürünün içerik '
+            "ve kullanım bilgilerini ekibimiz resmî ürün bilgi formuna göre kısa süre "
+            "içinde size iletecektir."
+        )
+    else:
+        reply = (
+            "Thank you for your question! Detailed product information is available on "
+            "our product pages; our team will share the specifics with you shortly."
+            if lang == "en"
+            else "Merhaba, sorunuz için teşekkürler! Ürünlerimizle ilgili detaylı bilgiyi "
+            "ürün sayfalarımızda bulabilirsiniz; ekibimiz sorunuzla ilgili bilgiyi kısa "
+            "süre içinde size iletecektir."
+        )
     return Draft(
         False,
         reply,
         "Product question. Answer from official product data sheet only; no skin "
-        "diagnosis or personal recommendation.",
+        f"diagnosis or personal recommendation. {_enrichment_note(enrichment)}",
+        frozenset({Category.PRICE}) if match is not None else frozenset(),
     )
 
 
@@ -440,13 +642,17 @@ def _append_secondary_intents(
         return draft
     reply = (
         draft.reply
-        if draft.note.startswith(SECURITY_NOTE_PREFIX)
+        if draft.note.startswith(SECURITY_NOTE_PREFIX) or secondary in draft.covered_intents
         else f"{draft.reply}\n{SECONDARY_INTENT_REPLIES[secondary][lang]}"
     )
     return Draft(draft.devret, reply, f"{draft.note} Secondary intent: {secondary.value}.")
 
 
-def process_message(message: InboundMessage, fetch_cart: CartFetcher) -> TicketResult:
+def process_message(
+    message: InboundMessage,
+    fetch_cart: CartFetcher,
+    search_products: ProductSearcher | None = None,
+) -> TicketResult:
     lang = detect_language(message.mesaj)
     category = classify(message.mesaj)
 
@@ -457,9 +663,9 @@ def process_message(message: InboundMessage, fetch_cart: CartFetcher) -> TicketR
     elif category is Category.ORDER_STATUS:
         draft = draft_order_status(message, lang, fetch_cart)
     elif category is Category.PRICE:
-        draft = draft_price(lang)
+        draft = draft_price(lang, enrich_from_catalog(message.mesaj, search_products))
     elif category is Category.PRODUCT_QUESTION:
-        draft = draft_product_question(lang)
+        draft = draft_product_question(lang, enrich_from_catalog(message.mesaj, search_products))
     elif is_spam(message.mesaj):
         draft = draft_spam()
     else:
@@ -497,14 +703,17 @@ def run(
     input_path: Path = INPUT_PATH,
     output_path: Path = OUTPUT_PATH,
     fetch_cart: CartFetcher | None = None,
+    search_products: ProductSearcher | None = None,
 ) -> list[TicketResult]:
     messages = load_messages(input_path)
     logger.info("Loaded %d messages from %s", len(messages), input_path.name)
 
-    if fetch_cart is None:
-        fetch_cart = make_cart_fetcher(build_http_session())
+    if fetch_cart is None or search_products is None:
+        session = build_http_session()
+        fetch_cart = fetch_cart or make_cart_fetcher(session)
+        search_products = search_products or make_product_searcher(session)
 
-    results = [process_message(message, fetch_cart) for message in messages]
+    results = [process_message(message, fetch_cart, search_products) for message in messages]
     write_results(output_path, results)
     logger.info("Wrote %d tickets to %s", len(results), output_path.name)
     return results
